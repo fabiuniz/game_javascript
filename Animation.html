@@ -19,6 +19,14 @@
         /* Inicializações*/
         /* Objeto para imagens*/
         const images = {
+            person_stopped_right: new Image(),
+            person_stopped_left: new Image(),
+            person_running_left: new Image(),
+            person_running_right: new Image(),
+            person_shoot_left: new Image(),
+            person_shoot_right: new Image(),
+            person_jump_left: new Image(),
+            person_jump_right: new Image(),
             floor: new Image(),
             ceiling: new Image(),
             pillar: new Image(),
@@ -26,6 +34,14 @@
         };
 
         /* Carregando imagens*/
+        images.person_stopped_right.src = 'images/stop_right.png';
+        images.person_stopped_left.src = 'images/stop_left.png';
+        images.person_running_left.src = 'images/walk_left.png';
+        images.person_running_right.src = 'images/walk_right.png';
+        images.person_shoot_left.src = 'images/shoot_mirror.png';
+        images.person_shoot_right.src = 'images/shoot.png';
+        images.person_jump_left.src = 'images/jump_mirror.png';
+        images.person_jump_right.src = 'images/jump.png';
         images.floor.src = 'images/chao.png';
         images.ceiling.src = 'images/teto.png';
         images.pillar.src = 'images/pilar.png';
@@ -52,9 +68,16 @@
                 ctx.drawImage(images.pillar, (pilarFator * i) - screenPosition, 164, 21, 65);
             }
         }
+        function drawperson() {
+            const personX = canvas.width / 2 - 78;
+            const personY = canvas.height - 160;
+            /* Desenha o personagem baseado nas ações atuais*/
+                        ctx.drawImage(images.person_stopped_right, personX, personY, 78, 160);
+        }
         function drawsallprites() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawBackground();
+            drawperson();
         }
         function update() {
             const timeElapsed = 16;
