@@ -16,7 +16,20 @@
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        
+        /* Definição dos estados do jogo*/
+        const VM_STANDBY = 0;
+        const VM_WALK = 1;
+        const VM_SHOOT = 2;
+        const VM_JUMP = 3;
+        
         /* Inicializações*/
+        let facingDirection = 'right';
+        let action = VM_STANDBY;
+        let actionTime = 0;
+        let screenPosition = 128;
+        let keyState = {};
+        
         /* Objeto para imagens*/
         const images = {
             person_stopped_right: new Image(),
@@ -74,10 +87,24 @@
             /* Desenha o personagem baseado nas ações atuais*/
                         ctx.drawImage(images.person_stopped_right, personX, personY, 78, 160);
         }
+
+        function drawstatuslabel() {
+            /* Desenha informações de status*/
+            ctx.fillStyle = '#000000';
+            ctx.fillText("Ação: " + (action === VM_STANDBY ? "Parado" :
+                action === VM_WALK ? "Andando" :
+                action === VM_SHOOT ? "Atirando" :
+                "Pulando"), 10, 64);
+            ctx.fillText("Tempo da ação: " + actionTime, 10, 80);
+            ctx.fillText("Posição da tela: " + Math.round(screenPosition), 10, 96);
+            ctx.fillText("s = atirar; j = pular; setas = movimentar ", 10, 112);
+        }
+
         function drawsallprites() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawBackground();
             drawperson();
+            drawstatuslabel();
         }
         function update() {
             const timeElapsed = 16;
