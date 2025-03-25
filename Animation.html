@@ -21,17 +21,35 @@
         const images = {
             floor: new Image(),
             ceiling: new Image(),
+            pillar: new Image(),
+            forest: new Image() /* Adiciona a imagem da floresta*/
         };
+
         /* Carregando imagens*/
         images.floor.src = 'images/chao.png';
         images.ceiling.src = 'images/teto.png';
+        images.pillar.src = 'images/pilar.png';
+        images.forest.src = 'images/floresta.png'; /* Carregando a imagem da floresta*/
+
         function drawBackground() {
             const lFator = 32;
+
+            /* Desenhar floresta (ao fundo)*/
+            ctx.drawImage(images.forest, 0 - screenPosition * 0.5, 0, canvas.width+40, canvas.height); /* Floresta se move mais devagar*/
+
             /* Teto e chão*/
             for (let i = 0; i < 32; i++) {
                 ctx.drawImage(images.ceiling, (lFator * i) - screenPosition, -2, 32, 32);
                 ctx.drawImage(images.ceiling, (lFator * i + lFator) - screenPosition, -2, 32, 32);
                 ctx.drawImage(images.floor, (lFator * i) - screenPosition, 232, 32, 32);
+            }
+
+            /* Desenhar pilares*/
+            const pilarFator = 125;
+            for (let i = 0; i < 10; i++) {
+                ctx.drawImage(images.pillar, (pilarFator * i) - screenPosition, 34, 21, 65);
+                ctx.drawImage(images.pillar, (pilarFator * i) - screenPosition, 99, 21, 65);
+                ctx.drawImage(images.pillar, (pilarFator * i) - screenPosition, 164, 21, 65);
             }
         }
         function drawsallprites() {
