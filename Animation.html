@@ -12,6 +12,47 @@
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="800" height="265"></canvas>    
+    <canvas id="gameCanvas" width="800" height="265"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        /* Inicializações*/
+        /* Objeto para imagens*/
+        const images = {
+            floor: new Image(),
+            ceiling: new Image(),
+        };
+        /* Carregando imagens*/
+        images.floor.src = 'images/chao.png';
+        images.ceiling.src = 'images/teto.png';
+        function drawBackground() {
+            const lFator = 32;
+            /* Teto e chão*/
+            for (let i = 0; i < 32; i++) {
+                ctx.drawImage(images.ceiling, (lFator * i) - screenPosition, -2, 32, 32);
+                ctx.drawImage(images.ceiling, (lFator * i + lFator) - screenPosition, -2, 32, 32);
+                ctx.drawImage(images.floor, (lFator * i) - screenPosition, 232, 32, 32);
+            }
+        }
+        function drawsallprites() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackground();
+        }
+        function update() {
+            const timeElapsed = 16;
+            drawsallprites();
+            requestAnimationFrame(update); /* Uso do requestAnimationFrame: Desempenho: requestAnimationFrame é 
+            uma abordagem eficiente para atualizar o jogo, pois permite que o navegador otimize as animações e 
+            reduza a carga da CPU/GPU, sincronizando os frames com a taxa de atualização do monitor.*/
+        }
+        function init() {
+            ctx.font = "16px Arial";
+            screenPosition = 128; /* Inicializa a posição da tela */
+            update(); /* usa screenPosition += (0.1 + (timeElapsed / 3));. Essa lógica aplica um fator que 
+            aumenta o movimento em direção à direita e diminui para a esquerda. Isso adiciona uma leve 
+            variação no tempo de transição, tornando a jogabilidade mais interessante, permitindo movimentos suaves e variáveis. */
+        }
+        init();
+    </script>
 </body>
 </html>
