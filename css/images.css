@@ -1,0 +1,55 @@
+ .chao {
+  background-image: url('chao.bmp');
+  width: 32px; /* ajustar largura */
+  height: 32px; /* ajustar altura */
+}
+.teto {
+  background-image: url('teto.bmp');
+  width: 32px; /* ajustar largura */
+  height: 32px; /* ajustar altura */
+}
+.pilar {
+  background-image: url('pilar.bmp');
+  width: 21px; /* ajustar largura */
+  height: 65px; /* ajustar altura */
+}
+.person_chuteLeft {
+  background-image: url('kick_mirror.bmp');
+  width: 68px; /* ajustar largura */
+  height: 160px; /* ajustar altura */
+}
+.person_chuteRight {
+  background-image: url('kick.bmp');
+  width: 68px; /* ajustar largura */
+  height: 160px; /* ajustar altura */
+}
+.person_socoLeft {
+  background-image: url('punch_mirror.bmp');
+  width: 68px; /* ajustar largura */
+  height: 160px; /* ajustar altura */
+}
+.person_socoRight {
+  background-image: url('punch.bmp');
+  width: 68px; /* ajustar largura */
+  height: 160px; /* ajustar altura */
+}
+.person_walkingLeft {
+  background-image: url('walk_left.bmp');
+  width: 68px; /* ajustar largura */
+  height: 160px; /* ajustar altura */
+}
+.person_walkingRight {
+  background-image: url('walk_right.bmp');
+  width: 68px; /* ajustar largura */
+  height: 160px; /* ajustar altura */
+}
+.person_stoped_right {
+  background-image: url('stop_right.bmp');
+  width: 68px; /* ajustar largura */
+  height: 160px; /* ajustar altura */
+}
+.person_stoped_left {
+  background-image: url('stop_left.bmp');
+  width: 68px; /* ajustar largura */
+  height: 160px; /* ajustar altura */
+}
