@@ -60,6 +60,14 @@
         images.pillar.src = 'images/pilar.png';
         images.forest.src = 'images/floresta.png'; /* Carregando a imagem da floresta*/
 
+        window.addEventListener('keydown', (e) => {
+            keyState[e.key] = true;
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keyState[e.key] = false;
+        });
+
         function drawBackground() {
             const lFator = 32;
 
@@ -85,7 +93,36 @@
             const personX = canvas.width / 2 - 78;
             const personY = canvas.height - 160;
             /* Desenha o personagem baseado nas ações atuais*/
+            switch (action) {
+                case VM_STANDBY:
+                    if (facingDirection === 'left') {
+                        ctx.drawImage(images.person_stopped_left, personX, personY, 78, 160);
+                    } else {
                         ctx.drawImage(images.person_stopped_right, personX, personY, 78, 160);
+                    }
+                    break;
+                case VM_WALK:
+                    if (facingDirection === 'left') {
+                        ctx.drawImage(images.person_running_left, personX, personY, 78, 160);
+                    } else {
+                        ctx.drawImage(images.person_running_right, personX, personY, 78, 160);
+                    }
+                    break;
+                case VM_SHOOT:
+                    if (facingDirection === 'left') {
+                        ctx.drawImage(images.person_shoot_left, personX, personY, 78, 160);
+                    } else {
+                        ctx.drawImage(images.person_shoot_right, personX, personY, 78, 160);
+                    }
+                    break;
+                case VM_JUMP:
+                    if (facingDirection === 'left') {
+                        ctx.drawImage(images.person_jump_left, personX, personY, 78, 160);
+                    } else {
+                        ctx.drawImage(images.person_jump_right, personX, personY, 78, 160);
+                    }
+                    break;
+            }
         }
 
         function drawstatuslabel() {
@@ -108,6 +145,48 @@
         }
         function update() {
             const timeElapsed = 16;
+            switch (action) {
+                case VM_STANDBY:
+                    actionTime = 0;
+                    /* Verifique qual tecla está pressionada para mudar a ação*/
+                    if (keyState['ArrowLeft']) {
+                        action = VM_WALK;
+                        facingDirection = 'left';
+                    } else if (keyState['ArrowRight']) {
+                        action = VM_WALK;
+                        facingDirection = 'right';
+                    } else if (keyState['s']) {
+                        action = VM_SHOOT;
+                    } else if (keyState['j']) {
+                        action = VM_JUMP;
+                    }
+                    break;
+                case VM_WALK:
+                    actionTime += (1 + timeElapsed);
+                    /* Movimentação*/
+                    if (keyState['ArrowRight']) {
+                        screenPosition += (0.1 + (timeElapsed / 3));
+                    } else if (keyState['ArrowLeft']) {
+                        screenPosition -= (0.1 + (timeElapsed / 3));
+                    }
+                    /* Limitações de rolagem*/
+                    if (screenPosition >= 128) {
+                        screenPosition = 0;
+                    } else if (screenPosition <= 0) {
+                        screenPosition = 128;
+                    }
+                    if (actionTime >= 400) {
+                        action = VM_STANDBY;
+                    }
+                    break;
+                case VM_SHOOT:
+                case VM_JUMP:
+                    actionTime += (1 + timeElapsed);
+                    if (actionTime >= 400) {
+                        action = VM_STANDBY;
+                    }
+                    break;
+            }
             drawsallprites();
             requestAnimationFrame(update); /* Uso do requestAnimationFrame: Desempenho: requestAnimationFrame é 
             uma abordagem eficiente para atualizar o jogo, pois permite que o navegador otimize as animações e 
