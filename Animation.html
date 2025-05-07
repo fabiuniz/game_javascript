@@ -3,34 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Animation</title>
+    <title>Jogo Megaman - Aprimorado</title>
     <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .game-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
         canvas {
-            border: 1px solid black;
+            border: 2px solid #0066cc;
             background-color: #f0f0f0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .controls {
+            background-color: #e6f2ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+        }
+        .controls h3 {
+            margin-top: 0;
+            color: #0066cc;
+        }
+        .key {
+            display: inline-block;
+            background-color: #ddd;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin: 0 5px;
+            box-shadow: 0 2px 2px rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="800" height="265"></canvas>
+    <h1>Megaman Runner</h1>
+    <div class="game-container">
+        <canvas id="gameCanvas" width="800" height="265"></canvas>
+    </div>
+    
+    <div class="controls">
+        <h3>Controles</h3>
+        <p><span class="key">←</span> <span class="key">→</span> Mover | <span class="key">J</span> Pular | <span class="key">S</span> Atirar | 
+    </div>
+    
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
-        /* Definição dos estados do jogo*/
+        /* Definição dos estados do jogo */
         const VM_STANDBY = 0;
         const VM_WALK = 1;
         const VM_SHOOT = 2;
         const VM_JUMP = 3;
         
-        /* Inicializações*/
+        /* Inicializações */
         let facingDirection = 'right';
         let action = VM_STANDBY;
         let actionTime = 0;
         let screenPosition = 128;
         let keyState = {};
+        let jumpHeight = 0;
+        let isJumping = false;
+        let gravity = 0.5;
+        let jumpVelocity = -10;
+        let currentJumpVelocity = 0;
+        let groundLevel = canvas.height - 160;
+        let personY = groundLevel;
+        let personHeight = 160;
         
-        /* Objeto para imagens*/
+        /* Configuração do jogo */
+        let score = 0;
+        let gameStarted = false;
+        let gamePaused = false;
+        
+        /* Objeto para imagens */
         const images = {
             person_stopped_right: new Image(),
             person_stopped_left: new Image(),
@@ -43,10 +99,10 @@
             floor: new Image(),
             ceiling: new Image(),
             pillar: new Image(),
-            forest: new Image() /* Adiciona a imagem da floresta*/
+            forest: new Image() /* Imagem da floresta */
         };
 
-        /* Carregando imagens*/
+        /* Carregando imagens */
         images.person_stopped_right.src = 'images/stop_right.png';
         images.person_stopped_left.src = 'images/stop_left.png';
         images.person_running_left.src = 'images/walk_left.png';
@@ -58,10 +114,59 @@
         images.floor.src = 'images/chao.png';
         images.ceiling.src = 'images/teto.png';
         images.pillar.src = 'images/pilar.png';
-        images.forest.src = 'images/floresta.png'; /* Carregando a imagem da floresta*/
+        images.forest.src = 'images/floresta.png';
 
+        /* Sistema de projéteis */
+        const projectiles = [];
+        
+        class Projectile {
+            constructor(x, y, direction) {
+                this.x = x;
+                this.y = y;
+                this.direction = direction;
+                this.speed = 8;
+                this.width = 15;
+                this.height = 8;
+                this.active = true;
+            }
+
+            update() {
+                if (this.direction === 'right') {
+                    this.x += this.speed;
+                } else {
+                    this.x -= this.speed;
+                }
+                
+                // Desativar projéteis que saem da tela
+                if (this.x < 0 || this.x > canvas.width) {
+                    this.active = false;
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = '#0099ff';
+                ctx.beginPath();
+                ctx.ellipse(this.x, this.y, this.width, this.height, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Efeito de brilho
+                ctx.fillStyle = '#99ccff';
+                ctx.beginPath();
+                ctx.ellipse(this.x, this.y, this.width * 0.5, this.height * 0.5, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        /* Controladores de entrada */
         window.addEventListener('keydown', (e) => {
             keyState[e.key] = true;
+            if (e.key === 'p') {
+                gamePaused = !gamePaused;
+            }
+            if (e.key === 'Enter' && !gameStarted) {
+                gameStarted = true;
+                init();
+            }
         });
 
         window.addEventListener('keyup', (e) => {
@@ -71,17 +176,17 @@
         function drawBackground() {
             const lFator = 32;
 
-            /* Desenhar floresta (ao fundo)*/
-            ctx.drawImage(images.forest, 0 - screenPosition * 0.5, 0, canvas.width+40, canvas.height); /* Floresta se move mais devagar*/
+            /* Desenhar floresta (ao fundo) */
+            ctx.drawImage(images.forest, 0 - screenPosition * 0.2, 0, canvas.width + 40, canvas.height); /* Floresta se move mais devagar */
 
-            /* Teto e chão*/
+            /* Teto e chão */
             for (let i = 0; i < 32; i++) {
                 ctx.drawImage(images.ceiling, (lFator * i) - screenPosition, -2, 32, 32);
                 ctx.drawImage(images.ceiling, (lFator * i + lFator) - screenPosition, -2, 32, 32);
                 ctx.drawImage(images.floor, (lFator * i) - screenPosition, 232, 32, 32);
             }
 
-            /* Desenhar pilares*/
+            /* Desenhar pilares */
             const pilarFator = 125;
             for (let i = 0; i < 10; i++) {
                 ctx.drawImage(images.pillar, (pilarFator * i) - screenPosition, 34, 21, 65);
@@ -89,66 +194,170 @@
                 ctx.drawImage(images.pillar, (pilarFator * i) - screenPosition, 164, 21, 65);
             }
         }
-        function drawperson() {
+        
+        function drawPerson() {
             const personX = canvas.width / 2 - 78;
-            const personY = canvas.height - 160;
-            /* Desenha o personagem baseado nas ações atuais*/
+            /* Desenha o personagem baseado nas ações atuais */
             switch (action) {
                 case VM_STANDBY:
                     if (facingDirection === 'left') {
-                        ctx.drawImage(images.person_stopped_left, personX, personY, 78, 160);
+                        ctx.drawImage(images.person_stopped_left, personX, personY, 78, personHeight);
                     } else {
-                        ctx.drawImage(images.person_stopped_right, personX, personY, 78, 160);
+                        ctx.drawImage(images.person_stopped_right, personX, personY, 78, personHeight);
                     }
                     break;
                 case VM_WALK:
                     if (facingDirection === 'left') {
-                        ctx.drawImage(images.person_running_left, personX, personY, 78, 160);
+                        ctx.drawImage(images.person_running_left, personX, personY, 78, personHeight);
                     } else {
-                        ctx.drawImage(images.person_running_right, personX, personY, 78, 160);
+                        ctx.drawImage(images.person_running_right, personX, personY, 78, personHeight);
                     }
                     break;
                 case VM_SHOOT:
                     if (facingDirection === 'left') {
-                        ctx.drawImage(images.person_shoot_left, personX, personY, 78, 160);
+                        ctx.drawImage(images.person_shoot_left, personX, personY, 78, personHeight);
                     } else {
-                        ctx.drawImage(images.person_shoot_right, personX, personY, 78, 160);
+                        ctx.drawImage(images.person_shoot_right, personX, personY, 78, personHeight);
                     }
                     break;
                 case VM_JUMP:
                     if (facingDirection === 'left') {
-                        ctx.drawImage(images.person_jump_left, personX, personY, 78, 160);
+                        ctx.drawImage(images.person_jump_left, personX, personY, 78, personHeight);
                     } else {
-                        ctx.drawImage(images.person_jump_right, personX, personY, 78, 160);
+                        ctx.drawImage(images.person_jump_right, personX, personY, 78, personHeight);
                     }
                     break;
             }
         }
 
-        function drawstatuslabel() {
-            /* Desenha informações de status*/
-            ctx.fillStyle = '#000000';
+        function drawStatusLabel() {
+            /* Desenha informações de status */
+            ctx.fillStyle = '#333333';
+            ctx.font = "16px Arial";
             ctx.fillText("Ação: " + (action === VM_STANDBY ? "Parado" :
                 action === VM_WALK ? "Andando" :
                 action === VM_SHOOT ? "Atirando" :
-                "Pulando"), 10, 64);
-            ctx.fillText("Tempo da ação: " + actionTime, 10, 80);
-            ctx.fillText("Posição da tela: " + Math.round(screenPosition), 10, 96);
-            ctx.fillText("s = atirar; j = pular; setas = movimentar ", 10, 112);
+                action === VM_JUMP ? "Pulando" :
+                action === VM_PUNCH ? "Socando" :
+                "Chutando"), 10, 24);
+            ctx.fillText("Tempo da ação: " + actionTime, 10, 44);
+            ctx.fillText("Posição da tela: " + Math.round(screenPosition), 10, 64);
+            ctx.fillText("Pontuação: " + score, canvas.width - 120, 24);
         }
 
-        function drawsallprites() {
+        function drawAllSprites() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawBackground();
-            drawperson();
-            drawstatuslabel();
+            
+            // Desenhar projéteis ativos
+            projectiles.forEach(projectile => {
+                if (projectile.active) {
+                    projectile.draw();
+                }
+            });
+            
+            drawPerson();
+            drawStatusLabel();
         }
+
+        function drawStartScreen() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#000000';
+            ctx.font = "30px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText("Megaman Runner", canvas.width / 2, canvas.height / 2 - 30);
+            ctx.font = "20px Arial";
+            ctx.fillText("Pressione ENTER para começar", canvas.width / 2, canvas.height / 2 + 20);
+            ctx.textAlign = "start";
+        }
+
+        function drawPauseScreen() {
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = "30px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText("JOGO PAUSADO", canvas.width / 2, canvas.height / 2);
+            ctx.font = "18px Arial";
+            ctx.fillText("Pressione P para continuar", canvas.width / 2, canvas.height / 2 + 40);
+            ctx.textAlign = "start";
+        }
+
+        function createProjectile() {
+            const personX = canvas.width / 2;
+            const personWidth = 78;
+            const projectileY = personY + personHeight / 2;
+            
+            let projectileX;
+            if (facingDirection === 'right') {
+                projectileX = personX + personWidth / 2;
+            } else {
+                projectileX = personX - personWidth / 2;
+            }
+            
+            projectiles.push(new Projectile(projectileX, projectileY, facingDirection));
+        }
+        
+        function updateProjectiles() {
+            // Atualizar posição dos projéteis
+            projectiles.forEach(projectile => {
+                if (projectile.active) {
+                    projectile.update();
+                }
+            });
+            
+            // Remover projéteis inativos
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                if (!projectiles[i].active) {
+                    projectiles.splice(i, 1);
+                }
+            }
+        }
+
+        function applyGravity() {
+            if (isJumping) {
+                personY += currentJumpVelocity;
+                currentJumpVelocity += gravity;
+                
+                // Verificar se o personagem chegou ao chão
+                if (personY >= groundLevel) {
+                    personY = groundLevel;
+                    isJumping = false;
+                    currentJumpVelocity = 0;
+                    
+                    // Se estava pulando, voltar para o estado parado
+                    if (action === VM_JUMP) {
+                        action = VM_STANDBY;
+                    }
+                }
+            }
+        }
+
         function update() {
+            if (!gameStarted) {
+                drawStartScreen();
+                requestAnimationFrame(update);
+                return;
+            }
+            
+            if (gamePaused) {
+                drawPauseScreen();
+                requestAnimationFrame(update);
+                return;
+            }
+            
             const timeElapsed = 16;
+            
+            // Aplicar gravidade
+            applyGravity();
+            
+            // Atualizar projéteis
+            updateProjectiles();
+            
             switch (action) {
                 case VM_STANDBY:
                     actionTime = 0;
-                    /* Verifique qual tecla está pressionada para mudar a ação*/
+                    /* Verifique qual tecla está pressionada para mudar a ação */
                     if (keyState['ArrowLeft']) {
                         action = VM_WALK;
                         facingDirection = 'left';
@@ -157,49 +366,111 @@
                         facingDirection = 'right';
                     } else if (keyState['s']) {
                         action = VM_SHOOT;
-                    } else if (keyState['j']) {
+                        createProjectile();
+                    } else if (keyState['j'] && !isJumping) {
                         action = VM_JUMP;
+                        isJumping = true;
+                        currentJumpVelocity = jumpVelocity;
                     }
                     break;
                 case VM_WALK:
                     actionTime += (1 + timeElapsed);
-                    /* Movimentação*/
+                    /* Movimentação */
                     if (keyState['ArrowRight']) {
+                        facingDirection = 'right';
                         screenPosition += (0.1 + (timeElapsed / 3));
                     } else if (keyState['ArrowLeft']) {
+                        facingDirection = 'left';
                         screenPosition -= (0.1 + (timeElapsed / 3));
+                    } else {
+                        action = VM_STANDBY;
                     }
-                    /* Limitações de rolagem*/
-                    if (screenPosition >= 128) {
+                    
+                    /* Verificar outras ações durante a caminhada */
+                    if (keyState['s']) {
+                        action = VM_SHOOT;
+                        createProjectile();
+                    } else if (keyState['j'] && !isJumping) {
+                        action = VM_JUMP;
+                        isJumping = true;
+                        currentJumpVelocity = jumpVelocity;
+                    }
+                    
+                    /* Limitações de rolagem */
+                    if (screenPosition >= 1000) {
                         screenPosition = 0;
                     } else if (screenPosition <= 0) {
-                        screenPosition = 128;
-                    }
-                    if (actionTime >= 400) {
-                        action = VM_STANDBY;
+                        screenPosition = 1000;
                     }
                     break;
                 case VM_SHOOT:
-                case VM_JUMP:
                     actionTime += (1 + timeElapsed);
-                    if (actionTime >= 400) {
+                    if (actionTime >= 300) {
                         action = VM_STANDBY;
                     }
                     break;
+                case VM_JUMP:
+                    actionTime += (1 + timeElapsed);
+                    
+                    // Permitir movimento horizontal durante o pulo
+                    if (keyState['ArrowRight']) {
+                        facingDirection = 'right';
+                        screenPosition += (0.1 + (timeElapsed / 3));
+                    } else if (keyState['ArrowLeft']) {
+                        facingDirection = 'left';
+                        screenPosition -= (0.1 + (timeElapsed / 3));
+                    }
+                    
+                    // Permitir atirar durante o pulo
+                    if (keyState['s'] && actionTime % 30 === 0) {
+                        createProjectile();
+                    }
+                    break;
             }
-            drawsallprites();
-            requestAnimationFrame(update); /* Uso do requestAnimationFrame: Desempenho: requestAnimationFrame é 
-            uma abordagem eficiente para atualizar o jogo, pois permite que o navegador otimize as animações e 
-            reduza a carga da CPU/GPU, sincronizando os frames com a taxa de atualização do monitor.*/
+            
+            // Incrementar pontuação ao longo do tempo
+            if (Math.random() < 0.05) {
+                score++;
+            }
+            
+            drawAllSprites();
+            requestAnimationFrame(update);
         }
+        
         function init() {
             ctx.font = "16px Arial";
-            screenPosition = 128; /* Inicializa a posição da tela */
-            update(); /* usa screenPosition += (0.1 + (timeElapsed / 3));. Essa lógica aplica um fator que 
-            aumenta o movimento em direção à direita e diminui para a esquerda. Isso adiciona uma leve 
-            variação no tempo de transição, tornando a jogabilidade mais interessante, permitindo movimentos suaves e variáveis. */
+            screenPosition = 128;
+            score = 0;
+            projectiles.length = 0;
+            action = VM_STANDBY;
+            facingDirection = 'right';
+            isJumping = false;
+            personY = groundLevel;
+            update();
         }
-        init();
+        
+        // Iniciar o jogo
+        drawStartScreen();
+        
+        // Pré-carregar imagens
+        let loadedImages = 0;
+        const totalImages = Object.keys(images).length;
+        
+        function checkImagesLoaded() {
+            loadedImages++;
+            if (loadedImages === totalImages) {
+                console.log("Todas as imagens carregadas!");
+            }
+        }
+        
+        // Adicionar eventos de carregamento para todas as imagens
+        Object.values(images).forEach(img => {
+            img.onload = checkImagesLoaded;
+            img.onerror = function() {
+                console.error("Erro ao carregar imagem: " + this.src);
+                checkImagesLoaded();
+            };
+        });
     </script>
 </body>
 </html>

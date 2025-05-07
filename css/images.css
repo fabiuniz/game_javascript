@@ -1,55 +1,38 @@
- .chao {
-  background-image: url('chao.bmp');
-  width: 32px; /* ajustar largura */
-  height: 32px; /* ajustar altura */
+body {
+  margin: 0;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  background-color: #f0f8ff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
-.teto {
-  background-image: url('teto.bmp');
-  width: 32px; /* ajustar largura */
-  height: 32px; /* ajustar altura */
+.game-container {
+  position: relative;
+  margin-bottom: 20px;
 }
-.pilar {
-  background-image: url('pilar.bmp');
-  width: 21px; /* ajustar largura */
-  height: 65px; /* ajustar altura */
+canvas {
+  border: 2px solid #0066cc;
+  background-color: #f0f0f0;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
-.person_chuteLeft {
-  background-image: url('kick_mirror.bmp');
-  width: 68px; /* ajustar largura */
-  height: 160px; /* ajustar altura */
+.controls {
+  background-color: #e6f2ff;
+  padding: 15px;
+  border-radius: 8px;
+  margin-top: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  max-width: 800px;
 }
-.person_chuteRight {
-  background-image: url('kick.bmp');
-  width: 68px; /* ajustar largura */
-  height: 160px; /* ajustar altura */
+.controls h3 {
+  margin-top: 0;
+  color: #0066cc;
 }
-.person_socoLeft {
-  background-image: url('punch_mirror.bmp');
-  width: 68px; /* ajustar largura */
-  height: 160px; /* ajustar altura */
-}
-.person_socoRight {
-  background-image: url('punch.bmp');
-  width: 68px; /* ajustar largura */
-  height: 160px; /* ajustar altura */
-}
-.person_walkingLeft {
-  background-image: url('walk_left.bmp');
-  width: 68px; /* ajustar largura */
-  height: 160px; /* ajustar altura */
-}
-.person_walkingRight {
-  background-image: url('walk_right.bmp');
-  width: 68px; /* ajustar largura */
-  height: 160px; /* ajustar altura */
-}
-.person_stoped_right {
-  background-image: url('stop_right.bmp');
-  width: 68px; /* ajustar largura */
-  height: 160px; /* ajustar altura */
-}
-.person_stoped_left {
-  background-image: url('stop_left.bmp');
-  width: 68px; /* ajustar largura */
-  height: 160px; /* ajustar altura */
+.key {
+  display: inline-block;
+  background-color: #ddd;
+  padding: 5px 10px;
+  border-radius: 4px;
+  margin: 0 5px;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.1);
 }
