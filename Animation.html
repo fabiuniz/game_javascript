@@ -53,22 +53,20 @@
     
     <div class="controls">
         <h3>Controles</h3>
-        <p><span class="key">←</span> <span class="key">→</span> Mover | <span class="key">J</span> Pular | <span class="key">S</span> Atirar | <span class="key">K</span> Soco | <span class="key">L</span> Chute</p>
+        <p><span class="key">←</span> <span class="key">→</span> Mover | <span class="key">J</span> Pular | <span class="key">S</span> Atirar
     </div>
     
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
-        /* Definição dos estados do jogo */
+        /* Definição dos estados do jogo*/
         const VM_STANDBY = 0;
         const VM_WALK = 1;
         const VM_SHOOT = 2;
         const VM_JUMP = 3;
-        const VM_PUNCH = 4;
-        const VM_KICK = 5;
         
-        /* Inicializações */
+        /* Inicializações*/
         let facingDirection = 'right';
         let action = VM_STANDBY;
         let actionTime = 0;
@@ -82,227 +80,38 @@
         let personY = groundLevel;
         let personHeight = 160;
         
-        /* Configuração do jogo */
-        let score = 0;
-        let gameStarted = false;
-        let gamePaused = false;
-        let lastFrameTime = 0;
-        let deltaTime = 0;
-        
-        /* Sistema de animação por sprites */
-        class Animation {
-            constructor(frames, frameDuration) {
-                this.frames = frames;          // Array de frames
-                this.frameDuration = frameDuration; // Duração de cada frame em ms
-                this.currentFrameIndex = 0;
-                this.frameTimer = 0;
-                this.finished = false;
-                this.loop = true;              // Se a animação deve repetir
-            }
-            
-            update(dt) {
-                this.frameTimer += dt;
-                
-                if (this.frameTimer >= this.frameDuration) {
-                    this.frameTimer = 0;
-                    
-                    if (this.currentFrameIndex < this.frames.length - 1) {
-                        this.currentFrameIndex++;
-                    } else {
-                        if (this.loop) {
-                            this.currentFrameIndex = 0;
-                        } else {
-                            this.finished = true;
-                        }
-                    }
-                }
-            }
-            
-            reset() {
-                this.currentFrameIndex = 0;
-                this.frameTimer = 0;
-                this.finished = false;
-            }
-            
-            getCurrentFrame() {
-                return this.frames[this.currentFrameIndex];
-            }
-        }
-        
-        /* Definição do spritesheet */
-        const spritesheets = {
-            stand_right: {
-                image: new Image(),
-                frames: [0], // Índice dos frames na imagem
-                frameDuration: 100
-            },
-            stand_left: {
-                image: new Image(),
-                frames: [0],
-                frameDuration: 100
-            },
-            walk_right: {
-                image: new Image(),
-                frames: [0, 1, 2, 3], // Sequência de frames para andar
-                frameDuration: 100
-            },
-            walk_left: {
-                image: new Image(),
-                frames: [0, 1, 2, 3],
-                frameDuration: 100
-            },
-            jump_right: {
-                image: new Image(),
-                frames: [0, 1],
-                frameDuration: 150,
-                loop: false
-            },
-            jump_left: {
-                image: new Image(),
-                frames: [0, 1],
-                frameDuration: 150,
-                loop: false
-            },
-            shoot_right: {
-                image: new Image(),
-                frames: [0, 1, 2],
-                frameDuration: 100,
-                loop: false
-            },
-            shoot_left: {
-                image: new Image(),
-                frames: [0, 1, 2],
-                frameDuration: 100,
-                loop: false
-            },
-            punch_right: {
-                image: new Image(),
-                frames: [0, 1, 2],
-                frameDuration: 100,
-                loop: false
-            },
-            punch_left: {
-                image: new Image(),
-                frames: [0, 1, 2],
-                frameDuration: 100,
-                loop: false
-            },
-            kick_right: {
-                image: new Image(),
-                frames: [0, 1, 2],
-                frameDuration: 130,
-                loop: false
-            },
-            kick_left: {
-                image: new Image(),
-                frames: [0, 1, 2],
-                frameDuration: 130,
-                loop: false
-            }
-        };
-        
-        // Mapeamento de sprites - simula o uso das imagens carregadas
-        const spriteMapping = {
-            stand_right: { width: 68, height: 160, frameCount: 1, x: 0, y: 0 },
-            stand_left: { width: 68, height: 160, frameCount: 1, x: 0, y: 0 },
-            walk_right: { width: 68, height: 160, frameCount: 4, x: 0, y: 0 },
-            walk_left: { width: 68, height: 160, frameCount: 4, x: 0, y: 0 },
-            jump_right: { width: 68, height: 160, frameCount: 2, x: 0, y: 0 },
-            jump_left: { width: 68, height: 160, frameCount: 2, x: 0, y: 0 },
-            shoot_right: { width: 68, height: 160, frameCount: 3, x: 0, y: 0 },
-            shoot_left: { width: 68, height: 160, frameCount: 3, x: 0, y: 0 },
-            punch_right: { width: 68, height: 160, frameCount: 3, x: 0, y: 0 },
-            punch_left: { width: 68, height: 160, frameCount: 3, x: 0, y: 0 },
-            kick_right: { width: 68, height: 160, frameCount: 3, x: 0, y: 0 },
-            kick_left: { width: 68, height: 160, frameCount: 3, x: 0, y: 0 }
-        };
-        
-        /* Objeto para imagens do cenário */
+        /* Objeto para imagens*/
         const images = {
+            person_stopped_right: new Image(),
+            person_stopped_left: new Image(),
+            person_running_left: new Image(),
+            person_running_right: new Image(),
+            person_shoot_left: new Image(),
+            person_shoot_right: new Image(),
+            person_jump_left: new Image(),
+            person_jump_right: new Image(),
             floor: new Image(),
             ceiling: new Image(),
             pillar: new Image(),
-            forest: new Image()
+            forest: new Image() /* Adiciona a imagem da floresta*/
         };
 
-        /* Carregando imagens */
-        spritesheets.stand_right.image.src = 'images/stop_right.png';
-        spritesheets.stand_left.image.src = 'images/stop_left.png';
-        spritesheets.walk_right.image.src = 'images/walk_right.png';
-        spritesheets.walk_left.image.src = 'images/walk_left.png';
-        spritesheets.shoot_right.image.src = 'images/shoot.png';
-        spritesheets.shoot_left.image.src = 'images/shoot_mirror.png';
-        spritesheets.jump_right.image.src = 'images/jump.png';
-        spritesheets.jump_left.image.src = 'images/jump_mirror.png';
-        spritesheets.punch_right.image.src = 'images/punch.png';
-        spritesheets.punch_left.image.src = 'images/punch_mirror.png';
-        spritesheets.kick_right.image.src = 'images/kick.png';
-        spritesheets.kick_left.image.src = 'images/kick_mirror.png';
-        
+        /* Carregando imagens*/
+        images.person_stopped_right.src = 'images/stop_right.png';
+        images.person_stopped_left.src = 'images/stop_left.png';
+        images.person_running_left.src = 'images/walk_left.png';
+        images.person_running_right.src = 'images/walk_right.png';
+        images.person_shoot_left.src = 'images/shoot_mirror.png';
+        images.person_shoot_right.src = 'images/shoot.png';
+        images.person_jump_left.src = 'images/jump_mirror.png';
+        images.person_jump_right.src = 'images/jump.png';
         images.floor.src = 'images/chao.png';
         images.ceiling.src = 'images/teto.png';
         images.pillar.src = 'images/pilar.png';
-        images.forest.src = 'images/floresta.png';
+        images.forest.src = 'images/floresta.png'; /* Carregando a imagem da floresta*/
 
-        /* Criar animações */
-        const animations = {};
-        
-        for (const [key, sprite] of Object.entries(spritesheets)) {
-            animations[key] = new Animation(sprite.frames, sprite.frameDuration);
-            animations[key].loop = sprite.loop !== false;
-        }
-        
-        /* Sistema de projéteis */
-        const projectiles = [];
-        
-        class Projectile {
-            constructor(x, y, direction) {
-                this.x = x;
-                this.y = y;
-                this.direction = direction;
-                this.speed = 8;
-                this.width = 15;
-                this.height = 8;
-                this.active = true;
-            }
-
-            update(dt) {
-                if (this.direction === 'right') {
-                    this.x += this.speed * (dt / 16);
-                } else {
-                    this.x -= this.speed * (dt / 16);
-                }
-                
-                // Desativar projéteis que saem da tela
-                if (this.x < 0 || this.x > canvas.width) {
-                    this.active = false;
-                }
-            }
-
-            draw() {
-                ctx.fillStyle = '#0099ff';
-                ctx.beginPath();
-                ctx.ellipse(this.x, this.y, this.width, this.height, 0, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Efeito de brilho
-                ctx.fillStyle = '#99ccff';
-                ctx.beginPath();
-                ctx.ellipse(this.x, this.y, this.width * 0.5, this.height * 0.5, 0, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
-        /* Controladores de entrada */
         window.addEventListener('keydown', (e) => {
             keyState[e.key] = true;
-            if (e.key === 'p') {
-                gamePaused = !gamePaused;
-            }
-            if (e.key === 'Enter' && !gameStarted) {
-                gameStarted = true;
-                init();
-            }
         });
 
         window.addEventListener('keyup', (e) => {
@@ -312,17 +121,17 @@
         function drawBackground() {
             const lFator = 32;
 
-            /* Desenhar floresta (ao fundo) */
-            ctx.drawImage(images.forest, 0 - screenPosition * 0.2, 0, canvas.width + 40, canvas.height);
+            /* Desenhar floresta (ao fundo)*/
+            ctx.drawImage(images.forest, 0 - screenPosition * 0.5, 0, canvas.width+40, canvas.height); /* Floresta se move mais devagar*/
 
-            /* Teto e chão */
+            /* Teto e chão*/
             for (let i = 0; i < 32; i++) {
                 ctx.drawImage(images.ceiling, (lFator * i) - screenPosition, -2, 32, 32);
                 ctx.drawImage(images.ceiling, (lFator * i + lFator) - screenPosition, -2, 32, 32);
                 ctx.drawImage(images.floor, (lFator * i) - screenPosition, 232, 32, 32);
             }
 
-            /* Desenhar pilares */
+            /* Desenhar pilares*/
             const pilarFator = 125;
             for (let i = 0; i < 10; i++) {
                 ctx.drawImage(images.pillar, (pilarFator * i) - screenPosition, 34, 21, 65);
@@ -330,395 +139,117 @@
                 ctx.drawImage(images.pillar, (pilarFator * i) - screenPosition, 164, 21, 65);
             }
         }
-        
-        function drawPerson() {
+        function drawperson() {
             const personX = canvas.width / 2 - 78;
-            let currentAnimation;
-            let spriteInfo;
-            
-            // Selecionar a animação correta baseada no estado atual
+            const personY = canvas.height - 160;
+            /* Desenha o personagem baseado nas ações atuais*/
             switch (action) {
                 case VM_STANDBY:
-                    currentAnimation = animations[facingDirection === 'left' ? 'stand_left' : 'stand_right'];
-                    spriteInfo = spriteMapping[facingDirection === 'left' ? 'stand_left' : 'stand_right'];
+                    if (facingDirection === 'left') {
+                        ctx.drawImage(images.person_stopped_left, personX, personY, 78, 160);
+                    } else {
+                        ctx.drawImage(images.person_stopped_right, personX, personY, 78, 160);
+                    }
                     break;
                 case VM_WALK:
-                    currentAnimation = animations[facingDirection === 'left' ? 'walk_left' : 'walk_right'];
-                    spriteInfo = spriteMapping[facingDirection === 'left' ? 'walk_left' : 'walk_right'];
+                    if (facingDirection === 'left') {
+                        ctx.drawImage(images.person_running_left, personX, personY, 78, 160);
+                    } else {
+                        ctx.drawImage(images.person_running_right, personX, personY, 78, 160);
+                    }
                     break;
                 case VM_SHOOT:
-                    currentAnimation = animations[facingDirection === 'left' ? 'shoot_left' : 'shoot_right'];
-                    spriteInfo = spriteMapping[facingDirection === 'left' ? 'shoot_left' : 'shoot_right'];
-                    if (currentAnimation.finished) {
-                        action = VM_STANDBY;
-                        currentAnimation.reset();
+                    if (facingDirection === 'left') {
+                        ctx.drawImage(images.person_shoot_left, personX, personY, 78, 160);
+                    } else {
+                        ctx.drawImage(images.person_shoot_right, personX, personY, 78, 160);
                     }
                     break;
                 case VM_JUMP:
-                    currentAnimation = animations[facingDirection === 'left' ? 'jump_left' : 'jump_right'];
-                    spriteInfo = spriteMapping[facingDirection === 'left' ? 'jump_left' : 'jump_right'];
-                    break;
-                case VM_PUNCH:
-                    currentAnimation = animations[facingDirection === 'left' ? 'punch_left' : 'punch_right'];
-                    spriteInfo = spriteMapping[facingDirection === 'left' ? 'punch_left' : 'punch_right'];
-                    if (currentAnimation.finished) {
-                        action = VM_STANDBY;
-                        currentAnimation.reset();
-                    }
-                    break;
-                case VM_KICK:
-                    currentAnimation = animations[facingDirection === 'left' ? 'kick_left' : 'kick_right'];
-                    spriteInfo = spriteMapping[facingDirection === 'left' ? 'kick_left' : 'kick_right'];
-                    if (currentAnimation.finished) {
-                        action = VM_STANDBY;
-                        currentAnimation.reset();
+                    if (facingDirection === 'left') {
+                        ctx.drawImage(images.person_jump_left, personX, personY, 78, 160);
+                    } else {
+                        ctx.drawImage(images.person_jump_right, personX, personY, 78, 160);
                     }
                     break;
             }
-            
-// Desenhar o frame atual da animação
-            const frameIndex = currentAnimation.getCurrentFrame();
-            const frameWidth = spriteInfo.width;
-            const image = facingDirection === 'left' 
-                ? spritesheets[`${getActionName(action)}_left`].image 
-                : spritesheets[`${getActionName(action)}_right`].image;
-                
-            // Usar dimensões consideravelmente maiores e ajustar posicionamento
-            ctx.drawImage(
-                image,
-                frameIndex * frameWidth, 0, // sx, sy (posição do spritesheet)
-                frameWidth, spriteInfo.height, // sWidth, sHeight (tamanho do recorte)
-                personX - 15, personY, // dx, dy (posição no canvas) - ajustado para esquerda para compensar largura maior
-                120, personHeight // dWidth, dHeight (tamanho no canvas) - largura significativamente maior
-            );
         }
 
-        function getActionName(action) {
-            switch (action) {
-                case VM_STANDBY: return 'stand';
-                case VM_WALK: return 'walk';
-                case VM_SHOOT: return 'shoot';
-                case VM_JUMP: return 'jump';
-                case VM_PUNCH: return 'punch';
-                case VM_KICK: return 'kick';
-                default: return 'stand';
-            }
-        }
-
-        function drawStatusLabel() {
-            /* Desenha informações de status */
-            ctx.fillStyle = '#333333';
-            ctx.font = "16px Arial";
+        function drawstatuslabel() {
+            /* Desenha informações de status*/
+            ctx.fillStyle = '#000000';
             ctx.fillText("Ação: " + (action === VM_STANDBY ? "Parado" :
                 action === VM_WALK ? "Andando" :
                 action === VM_SHOOT ? "Atirando" :
-                action === VM_JUMP ? "Pulando" :
-                action === VM_PUNCH ? "Socando" :
-                "Chutando"), 10, 24);
-            ctx.fillText("Tempo da ação: " + Math.round(actionTime), 10, 44);
-            ctx.fillText("Posição da tela: " + Math.round(screenPosition), 10, 64);
-            ctx.fillText("Pontuação: " + score, canvas.width - 120, 24);
+                "Pulando"), 10, 64);
+            ctx.fillText("Tempo da ação: " + actionTime, 10, 80);
+            ctx.fillText("Posição da tela: " + Math.round(screenPosition), 10, 96);
+            ctx.fillText("s = atirar; j = pular; setas = movimentar ", 10, 112);
         }
 
-        function drawAllSprites() {
+        function drawsallprites() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawBackground();
-            
-            // Desenhar projéteis ativos
-            projectiles.forEach(projectile => {
-                if (projectile.active) {
-                    projectile.draw();
-                }
-            });
-            
-            drawPerson();
-            drawStatusLabel();
+            drawperson();
+            drawstatuslabel();
         }
-
-        function drawStartScreen() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#000000';
-            ctx.font = "30px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText("Megaman Runner", canvas.width / 2, canvas.height / 2 - 30);
-            ctx.font = "20px Arial";
-            ctx.fillText("Pressione ENTER para começar", canvas.width / 2, canvas.height / 2 + 20);
-            ctx.textAlign = "start";
-        }
-
-        function drawPauseScreen() {
-            ctx.fillStyle = 'rgba(0,0,0,0.5)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#FFFFFF';
-            ctx.font = "30px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText("JOGO PAUSADO", canvas.width / 2, canvas.height / 2);
-            ctx.font = "18px Arial";
-            ctx.fillText("Pressione P para continuar", canvas.width / 2, canvas.height / 2 + 40);
-            ctx.textAlign = "start";
-        }
-
-        function createProjectile() {
-            const personX = canvas.width / 2;
-            const personWidth = 78;
-            const projectileY = personY + personHeight / 2;
-            
-            let projectileX;
-            if (facingDirection === 'right') {
-                projectileX = personX + personWidth / 2;
-            } else {
-                projectileX = personX - personWidth / 2;
-            }
-            
-            projectiles.push(new Projectile(projectileX, projectileY, facingDirection));
-        }
-        
-        function updateProjectiles(dt) {
-            // Atualizar posição dos projéteis
-            projectiles.forEach(projectile => {
-                if (projectile.active) {
-                    projectile.update(dt);
-                }
-            });
-            
-            // Remover projéteis inativos
-            for (let i = projectiles.length - 1; i >= 0; i--) {
-                if (!projectiles[i].active) {
-                    projectiles.splice(i, 1);
-                }
-            }
-        }
-
-        function applyGravity(dt) {
-            if (isJumping) {
-                personY += currentJumpVelocity * (dt / 16);
-                currentJumpVelocity += gravity * (dt / 16);
-                
-                // Verificar se o personagem chegou ao chão
-                if (personY >= groundLevel) {
-                    personY = groundLevel;
-                    isJumping = false;
-                    currentJumpVelocity = 0;
-                    
-                    // Se estava pulando, voltar para o estado parado
-                    if (action === VM_JUMP) {
-                        action = VM_STANDBY;
-                        animations[facingDirection === 'left' ? 'jump_left' : 'jump_right'].reset();
-                    }
-                }
-            }
-        }
-
-        function update(timestamp) {
-            // Calcular deltaTime para animações consistentes
-            deltaTime = timestamp - lastFrameTime;
-            lastFrameTime = timestamp;
-            
-            if (!gameStarted) {
-                drawStartScreen();
-                requestAnimationFrame(update);
-                return;
-            }
-            
-            if (gamePaused) {
-                drawPauseScreen();
-                requestAnimationFrame(update);
-                return;
-            }
-            
-            // Limitar deltaTime para evitar saltos grandes em caso de lag
-            if (deltaTime > 100) deltaTime = 100;
-            
-            // Aplicar gravidade
-            applyGravity(deltaTime);
-            
-            // Atualizar projéteis
-            updateProjectiles(deltaTime);
-            
-            // Atualizar animações
-            let currentAnimationKey = '';
-            
+        function update() {
+            const timeElapsed = 16;
             switch (action) {
                 case VM_STANDBY:
                     actionTime = 0;
-                    currentAnimationKey = facingDirection === 'left' ? 'stand_left' : 'stand_right';
-                    
-                    /* Verifique qual tecla está pressionada para mudar a ação */
+                    /* Verifique qual tecla está pressionada para mudar a ação*/
                     if (keyState['ArrowLeft']) {
                         action = VM_WALK;
                         facingDirection = 'left';
-                        // Resetar a animação de andar
-                        animations['walk_left'].reset();
                     } else if (keyState['ArrowRight']) {
                         action = VM_WALK;
                         facingDirection = 'right';
-                        // Resetar a animação de andar
-                        animations['walk_right'].reset();
                     } else if (keyState['s']) {
                         action = VM_SHOOT;
-                        // Resetar a animação de atirar
-                        animations[facingDirection === 'left' ? 'shoot_left' : 'shoot_right'].reset();
-                        createProjectile();
-                    } else if (keyState['j'] && !isJumping) {
+                    } else if (keyState['j']) {
                         action = VM_JUMP;
-                        isJumping = true;
-                        currentJumpVelocity = jumpVelocity;
-                        // Resetar a animação de pular
-                        animations[facingDirection === 'left' ? 'jump_left' : 'jump_right'].reset();
-                    } else if (keyState['k']) {
-                        action = VM_PUNCH;
-                        // Resetar a animação de soco
-                        animations[facingDirection === 'left' ? 'punch_left' : 'punch_right'].reset();
-                    } else if (keyState['l']) {
-                        action = VM_KICK;
-                        // Resetar a animação de chute
-                        animations[facingDirection === 'left' ? 'kick_left' : 'kick_right'].reset();
                     }
                     break;
                 case VM_WALK:
-                    actionTime += deltaTime;
-                    currentAnimationKey = facingDirection === 'left' ? 'walk_left' : 'walk_right';
-                    
-                    /* Movimentação */
+                    actionTime += (1 + timeElapsed);
+                    /* Movimentação*/
                     if (keyState['ArrowRight']) {
-                        facingDirection = 'right';
-                        screenPosition += (0.1 + (deltaTime / 30));
+                        screenPosition += (0.1 + (timeElapsed / 3));
                     } else if (keyState['ArrowLeft']) {
-                        facingDirection = 'left';
-                        screenPosition -= (0.1 + (deltaTime / 30));
-                    } else {
-                        action = VM_STANDBY;
+                        screenPosition -= (0.1 + (timeElapsed / 3));
                     }
-                    
-                    /* Verificar outras ações durante a caminhada */
-                    if (keyState['s']) {
-                        action = VM_SHOOT;
-                        animations[facingDirection === 'left' ? 'shoot_left' : 'shoot_right'].reset();
-                        createProjectile();
-                    } else if (keyState['j'] && !isJumping) {
-                        action = VM_JUMP;
-                        isJumping = true;
-                        currentJumpVelocity = jumpVelocity;
-                        animations[facingDirection === 'left' ? 'jump_left' : 'jump_right'].reset();
-                    }
-                    
-                    /* Limitações de rolagem */
-                    if (screenPosition >= 1000) {
+                    /* Limitações de rolagem*/
+                    if (screenPosition >= 128) {
                         screenPosition = 0;
                     } else if (screenPosition <= 0) {
-                        screenPosition = 1000;
+                        screenPosition = 128;
+                    }
+                    if (actionTime >= 400) {
+                        action = VM_STANDBY;
                     }
                     break;
                 case VM_SHOOT:
-                    actionTime += deltaTime;
-                    currentAnimationKey = facingDirection === 'left' ? 'shoot_left' : 'shoot_right';
-                    
-                    // A mudança de estado é controlada pela finalização da animação
-                    if (actionTime >= 300) {
-                        animations[currentAnimationKey].finished = true;
-                    }
-                    break;
                 case VM_JUMP:
-                    actionTime += deltaTime;
-                    currentAnimationKey = facingDirection === 'left' ? 'jump_left' : 'jump_right';
-                    
-                    // Permitir movimento horizontal durante o pulo
-                    if (keyState['ArrowRight']) {
-                        facingDirection = 'right';
-                        screenPosition += (0.1 + (deltaTime / 30));
-                    } else if (keyState['ArrowLeft']) {
-                        facingDirection = 'left';
-                        screenPosition -= (0.1 + (deltaTime / 30));
-                    }
-                    
-                    // Permitir atirar durante o pulo
-                    if (keyState['s'] && actionTime % 300 < 16) {
-                        createProjectile();
-                    }
-                    break;
-                case VM_PUNCH:
-                    actionTime += deltaTime;
-                    currentAnimationKey = facingDirection === 'left' ? 'punch_left' : 'punch_right';
-                    
-                    // A mudança de estado é controlada pela finalização da animação
-                    if (actionTime >= 300) {
-                        animations[currentAnimationKey].finished = true;
-                    }
-                    break;
-                case VM_KICK:
-                    actionTime += deltaTime;
-                    currentAnimationKey = facingDirection === 'left' ? 'kick_left' : 'kick_right';
-                    
-                    // A mudança de estado é controlada pela finalização da animação
+                    actionTime += (1 + timeElapsed);
                     if (actionTime >= 400) {
-                        animations[currentAnimationKey].finished = true;
+                        action = VM_STANDBY;
                     }
                     break;
             }
-            
-            // Atualizar a animação atual
-            if (currentAnimationKey) {
-                animations[currentAnimationKey].update(deltaTime);
-            }
-            
-            // Incrementar pontuação ao longo do tempo
-            if (Math.random() < 0.05) {
-                score++;
-            }
-            
-            drawAllSprites();
-            requestAnimationFrame(update);
+            drawsallprites();
+            requestAnimationFrame(update); /* Uso do requestAnimationFrame: Desempenho: requestAnimationFrame é 
+            uma abordagem eficiente para atualizar o jogo, pois permite que o navegador otimize as animações e 
+            reduza a carga da CPU/GPU, sincronizando os frames com a taxa de atualização do monitor.*/
         }
-        
         function init() {
             ctx.font = "16px Arial";
-            screenPosition = 128;
-            score = 0;
-            projectiles.length = 0;
-            action = VM_STANDBY;
-            facingDirection = 'right';
-            isJumping = false;
-            personY = groundLevel;
-            lastFrameTime = performance.now();
-            
-            // Resetar todas as animações
-            for (const key in animations) {
-                animations[key].reset();
-            }
-            
-            update(lastFrameTime);
+            screenPosition = 128; /* Inicializa a posição da tela */
+            update(); /* usa screenPosition += (0.1 + (timeElapsed / 3));. Essa lógica aplica um fator que 
+            aumenta o movimento em direção à direita e diminui para a esquerda. Isso adiciona uma leve 
+            variação no tempo de transição, tornando a jogabilidade mais interessante, permitindo movimentos suaves e variáveis. */
         }
-        
-        // Iniciar o jogo
-        drawStartScreen();
-        
-        // Pré-carregar imagens
-        let loadedImages = 0;
-        const totalImages = Object.keys(images).length + Object.keys(spritesheets).length;
-        
-        function checkImagesLoaded() {
-            loadedImages++;
-            if (loadedImages === totalImages) {
-                console.log("Todas as imagens carregadas!");
-            }
-        }
-        
-        // Adicionar eventos de carregamento para todas as imagens
-        Object.values(images).forEach(img => {
-            img.onload = checkImagesLoaded;
-            img.onerror = function() {
-                console.error("Erro ao carregar imagem: " + this.src);
-                checkImagesLoaded();
-            };
-        });
-        
-        Object.values(spritesheets).forEach(sprite => {
-            sprite.image.onload = checkImagesLoaded;
-            sprite.image.onerror = function() {
-                console.error("Erro ao carregar sprite: " + this.src);
-                checkImagesLoaded();
-            };
-        });
+        init();
     </script>
 </body>
 </html>
