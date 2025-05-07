@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jogo Megaman - Aprimorado</title>
+    <title>Jogo Megaman - Animação por Sprites</title>
     <style>
         body {
             margin: 0;
@@ -46,14 +46,14 @@
     </style>
 </head>
 <body>
-    <h1>Megaman Runner</h1>
+    <h1>Megaman Runner - Animação Melhorada</h1>
     <div class="game-container">
         <canvas id="gameCanvas" width="800" height="265"></canvas>
     </div>
     
     <div class="controls">
         <h3>Controles</h3>
-        <p><span class="key">←</span> <span class="key">→</span> Mover | <span class="key">J</span> Pular | <span class="key">S</span> Atirar | 
+        <p><span class="key">←</span> <span class="key">→</span> Mover | <span class="key">J</span> Pular | <span class="key">S</span> Atirar | <span class="key">K</span> Soco | <span class="key">L</span> Chute</p>
     </div>
     
     <script>
@@ -65,6 +65,8 @@
         const VM_WALK = 1;
         const VM_SHOOT = 2;
         const VM_JUMP = 3;
+        const VM_PUNCH = 4;
+        const VM_KICK = 5;
         
         /* Inicializações */
         let facingDirection = 'right';
@@ -72,7 +74,6 @@
         let actionTime = 0;
         let screenPosition = 128;
         let keyState = {};
-        let jumpHeight = 0;
         let isJumping = false;
         let gravity = 0.5;
         let jumpVelocity = -10;
@@ -85,37 +86,172 @@
         let score = 0;
         let gameStarted = false;
         let gamePaused = false;
+        let lastFrameTime = 0;
+        let deltaTime = 0;
         
-        /* Objeto para imagens */
+        /* Sistema de animação por sprites */
+        class Animation {
+            constructor(frames, frameDuration) {
+                this.frames = frames;          // Array de frames
+                this.frameDuration = frameDuration; // Duração de cada frame em ms
+                this.currentFrameIndex = 0;
+                this.frameTimer = 0;
+                this.finished = false;
+                this.loop = true;              // Se a animação deve repetir
+            }
+            
+            update(dt) {
+                this.frameTimer += dt;
+                
+                if (this.frameTimer >= this.frameDuration) {
+                    this.frameTimer = 0;
+                    
+                    if (this.currentFrameIndex < this.frames.length - 1) {
+                        this.currentFrameIndex++;
+                    } else {
+                        if (this.loop) {
+                            this.currentFrameIndex = 0;
+                        } else {
+                            this.finished = true;
+                        }
+                    }
+                }
+            }
+            
+            reset() {
+                this.currentFrameIndex = 0;
+                this.frameTimer = 0;
+                this.finished = false;
+            }
+            
+            getCurrentFrame() {
+                return this.frames[this.currentFrameIndex];
+            }
+        }
+        
+        /* Definição do spritesheet */
+        const spritesheets = {
+            stand_right: {
+                image: new Image(),
+                frames: [0], // Índice dos frames na imagem
+                frameDuration: 100
+            },
+            stand_left: {
+                image: new Image(),
+                frames: [0],
+                frameDuration: 100
+            },
+            walk_right: {
+                image: new Image(),
+                frames: [0, 1, 2, 3], // Sequência de frames para andar
+                frameDuration: 100
+            },
+            walk_left: {
+                image: new Image(),
+                frames: [0, 1, 2, 3],
+                frameDuration: 100
+            },
+            jump_right: {
+                image: new Image(),
+                frames: [0, 1],
+                frameDuration: 150,
+                loop: false
+            },
+            jump_left: {
+                image: new Image(),
+                frames: [0, 1],
+                frameDuration: 150,
+                loop: false
+            },
+            shoot_right: {
+                image: new Image(),
+                frames: [0, 1, 2],
+                frameDuration: 100,
+                loop: false
+            },
+            shoot_left: {
+                image: new Image(),
+                frames: [0, 1, 2],
+                frameDuration: 100,
+                loop: false
+            },
+            punch_right: {
+                image: new Image(),
+                frames: [0, 1, 2],
+                frameDuration: 100,
+                loop: false
+            },
+            punch_left: {
+                image: new Image(),
+                frames: [0, 1, 2],
+                frameDuration: 100,
+                loop: false
+            },
+            kick_right: {
+                image: new Image(),
+                frames: [0, 1, 2],
+                frameDuration: 130,
+                loop: false
+            },
+            kick_left: {
+                image: new Image(),
+                frames: [0, 1, 2],
+                frameDuration: 130,
+                loop: false
+            }
+        };
+        
+        // Mapeamento de sprites - simula o uso das imagens carregadas
+        const spriteMapping = {
+            stand_right: { width: 68, height: 160, frameCount: 1, x: 0, y: 0 },
+            stand_left: { width: 68, height: 160, frameCount: 1, x: 0, y: 0 },
+            walk_right: { width: 68, height: 160, frameCount: 4, x: 0, y: 0 },
+            walk_left: { width: 68, height: 160, frameCount: 4, x: 0, y: 0 },
+            jump_right: { width: 68, height: 160, frameCount: 2, x: 0, y: 0 },
+            jump_left: { width: 68, height: 160, frameCount: 2, x: 0, y: 0 },
+            shoot_right: { width: 68, height: 160, frameCount: 3, x: 0, y: 0 },
+            shoot_left: { width: 68, height: 160, frameCount: 3, x: 0, y: 0 },
+            punch_right: { width: 68, height: 160, frameCount: 3, x: 0, y: 0 },
+            punch_left: { width: 68, height: 160, frameCount: 3, x: 0, y: 0 },
+            kick_right: { width: 68, height: 160, frameCount: 3, x: 0, y: 0 },
+            kick_left: { width: 68, height: 160, frameCount: 3, x: 0, y: 0 }
+        };
+        
+        /* Objeto para imagens do cenário */
         const images = {
-            person_stopped_right: new Image(),
-            person_stopped_left: new Image(),
-            person_running_left: new Image(),
-            person_running_right: new Image(),
-            person_shoot_left: new Image(),
-            person_shoot_right: new Image(),
-            person_jump_left: new Image(),
-            person_jump_right: new Image(),
             floor: new Image(),
             ceiling: new Image(),
             pillar: new Image(),
-            forest: new Image() /* Imagem da floresta */
+            forest: new Image()
         };
 
         /* Carregando imagens */
-        images.person_stopped_right.src = 'images/stop_right.png';
-        images.person_stopped_left.src = 'images/stop_left.png';
-        images.person_running_left.src = 'images/walk_left.png';
-        images.person_running_right.src = 'images/walk_right.png';
-        images.person_shoot_left.src = 'images/shoot_mirror.png';
-        images.person_shoot_right.src = 'images/shoot.png';
-        images.person_jump_left.src = 'images/jump_mirror.png';
-        images.person_jump_right.src = 'images/jump.png';
+        spritesheets.stand_right.image.src = 'images/stop_right.png';
+        spritesheets.stand_left.image.src = 'images/stop_left.png';
+        spritesheets.walk_right.image.src = 'images/walk_right.png';
+        spritesheets.walk_left.image.src = 'images/walk_left.png';
+        spritesheets.shoot_right.image.src = 'images/shoot.png';
+        spritesheets.shoot_left.image.src = 'images/shoot_mirror.png';
+        spritesheets.jump_right.image.src = 'images/jump.png';
+        spritesheets.jump_left.image.src = 'images/jump_mirror.png';
+        spritesheets.punch_right.image.src = 'images/punch.png';
+        spritesheets.punch_left.image.src = 'images/punch_mirror.png';
+        spritesheets.kick_right.image.src = 'images/kick.png';
+        spritesheets.kick_left.image.src = 'images/kick_mirror.png';
+        
         images.floor.src = 'images/chao.png';
         images.ceiling.src = 'images/teto.png';
         images.pillar.src = 'images/pilar.png';
         images.forest.src = 'images/floresta.png';
 
+        /* Criar animações */
+        const animations = {};
+        
+        for (const [key, sprite] of Object.entries(spritesheets)) {
+            animations[key] = new Animation(sprite.frames, sprite.frameDuration);
+            animations[key].loop = sprite.loop !== false;
+        }
+        
         /* Sistema de projéteis */
         const projectiles = [];
         
@@ -130,11 +266,11 @@
                 this.active = true;
             }
 
-            update() {
+            update(dt) {
                 if (this.direction === 'right') {
-                    this.x += this.speed;
+                    this.x += this.speed * (dt / 16);
                 } else {
-                    this.x -= this.speed;
+                    this.x -= this.speed * (dt / 16);
                 }
                 
                 // Desativar projéteis que saem da tela
@@ -177,7 +313,7 @@
             const lFator = 32;
 
             /* Desenhar floresta (ao fundo) */
-            ctx.drawImage(images.forest, 0 - screenPosition * 0.2, 0, canvas.width + 40, canvas.height); /* Floresta se move mais devagar */
+            ctx.drawImage(images.forest, 0 - screenPosition * 0.2, 0, canvas.width + 40, canvas.height);
 
             /* Teto e chão */
             for (let i = 0; i < 32; i++) {
@@ -197,36 +333,75 @@
         
         function drawPerson() {
             const personX = canvas.width / 2 - 78;
-            /* Desenha o personagem baseado nas ações atuais */
+            let currentAnimation;
+            let spriteInfo;
+            
+            // Selecionar a animação correta baseada no estado atual
             switch (action) {
                 case VM_STANDBY:
-                    if (facingDirection === 'left') {
-                        ctx.drawImage(images.person_stopped_left, personX, personY, 78, personHeight);
-                    } else {
-                        ctx.drawImage(images.person_stopped_right, personX, personY, 78, personHeight);
-                    }
+                    currentAnimation = animations[facingDirection === 'left' ? 'stand_left' : 'stand_right'];
+                    spriteInfo = spriteMapping[facingDirection === 'left' ? 'stand_left' : 'stand_right'];
                     break;
                 case VM_WALK:
-                    if (facingDirection === 'left') {
-                        ctx.drawImage(images.person_running_left, personX, personY, 78, personHeight);
-                    } else {
-                        ctx.drawImage(images.person_running_right, personX, personY, 78, personHeight);
-                    }
+                    currentAnimation = animations[facingDirection === 'left' ? 'walk_left' : 'walk_right'];
+                    spriteInfo = spriteMapping[facingDirection === 'left' ? 'walk_left' : 'walk_right'];
                     break;
                 case VM_SHOOT:
-                    if (facingDirection === 'left') {
-                        ctx.drawImage(images.person_shoot_left, personX, personY, 78, personHeight);
-                    } else {
-                        ctx.drawImage(images.person_shoot_right, personX, personY, 78, personHeight);
+                    currentAnimation = animations[facingDirection === 'left' ? 'shoot_left' : 'shoot_right'];
+                    spriteInfo = spriteMapping[facingDirection === 'left' ? 'shoot_left' : 'shoot_right'];
+                    if (currentAnimation.finished) {
+                        action = VM_STANDBY;
+                        currentAnimation.reset();
                     }
                     break;
                 case VM_JUMP:
-                    if (facingDirection === 'left') {
-                        ctx.drawImage(images.person_jump_left, personX, personY, 78, personHeight);
-                    } else {
-                        ctx.drawImage(images.person_jump_right, personX, personY, 78, personHeight);
+                    currentAnimation = animations[facingDirection === 'left' ? 'jump_left' : 'jump_right'];
+                    spriteInfo = spriteMapping[facingDirection === 'left' ? 'jump_left' : 'jump_right'];
+                    break;
+                case VM_PUNCH:
+                    currentAnimation = animations[facingDirection === 'left' ? 'punch_left' : 'punch_right'];
+                    spriteInfo = spriteMapping[facingDirection === 'left' ? 'punch_left' : 'punch_right'];
+                    if (currentAnimation.finished) {
+                        action = VM_STANDBY;
+                        currentAnimation.reset();
                     }
                     break;
+                case VM_KICK:
+                    currentAnimation = animations[facingDirection === 'left' ? 'kick_left' : 'kick_right'];
+                    spriteInfo = spriteMapping[facingDirection === 'left' ? 'kick_left' : 'kick_right'];
+                    if (currentAnimation.finished) {
+                        action = VM_STANDBY;
+                        currentAnimation.reset();
+                    }
+                    break;
+            }
+            
+// Desenhar o frame atual da animação
+            const frameIndex = currentAnimation.getCurrentFrame();
+            const frameWidth = spriteInfo.width;
+            const image = facingDirection === 'left' 
+                ? spritesheets[`${getActionName(action)}_left`].image 
+                : spritesheets[`${getActionName(action)}_right`].image;
+                
+            // Usar dimensões consideravelmente maiores e ajustar posicionamento
+            ctx.drawImage(
+                image,
+                frameIndex * frameWidth, 0, // sx, sy (posição do spritesheet)
+                frameWidth, spriteInfo.height, // sWidth, sHeight (tamanho do recorte)
+                personX - 15, personY, // dx, dy (posição no canvas) - ajustado para esquerda para compensar largura maior
+                120, personHeight // dWidth, dHeight (tamanho no canvas) - largura significativamente maior
+            );
+        }
+
+        function getActionName(action) {
+            switch (action) {
+                case VM_STANDBY: return 'stand';
+                case VM_WALK: return 'walk';
+                case VM_SHOOT: return 'shoot';
+                case VM_JUMP: return 'jump';
+                case VM_PUNCH: return 'punch';
+                case VM_KICK: return 'kick';
+                default: return 'stand';
             }
         }
 
@@ -240,7 +415,7 @@
                 action === VM_JUMP ? "Pulando" :
                 action === VM_PUNCH ? "Socando" :
                 "Chutando"), 10, 24);
-            ctx.fillText("Tempo da ação: " + actionTime, 10, 44);
+            ctx.fillText("Tempo da ação: " + Math.round(actionTime), 10, 44);
             ctx.fillText("Posição da tela: " + Math.round(screenPosition), 10, 64);
             ctx.fillText("Pontuação: " + score, canvas.width - 120, 24);
         }
@@ -298,11 +473,11 @@
             projectiles.push(new Projectile(projectileX, projectileY, facingDirection));
         }
         
-        function updateProjectiles() {
+        function updateProjectiles(dt) {
             // Atualizar posição dos projéteis
             projectiles.forEach(projectile => {
                 if (projectile.active) {
-                    projectile.update();
+                    projectile.update(dt);
                 }
             });
             
@@ -314,10 +489,10 @@
             }
         }
 
-        function applyGravity() {
+        function applyGravity(dt) {
             if (isJumping) {
-                personY += currentJumpVelocity;
-                currentJumpVelocity += gravity;
+                personY += currentJumpVelocity * (dt / 16);
+                currentJumpVelocity += gravity * (dt / 16);
                 
                 // Verificar se o personagem chegou ao chão
                 if (personY >= groundLevel) {
@@ -328,12 +503,17 @@
                     // Se estava pulando, voltar para o estado parado
                     if (action === VM_JUMP) {
                         action = VM_STANDBY;
+                        animations[facingDirection === 'left' ? 'jump_left' : 'jump_right'].reset();
                     }
                 }
             }
         }
 
-        function update() {
+        function update(timestamp) {
+            // Calcular deltaTime para animações consistentes
+            deltaTime = timestamp - lastFrameTime;
+            lastFrameTime = timestamp;
+            
             if (!gameStarted) {
                 drawStartScreen();
                 requestAnimationFrame(update);
@@ -346,42 +526,66 @@
                 return;
             }
             
-            const timeElapsed = 16;
+            // Limitar deltaTime para evitar saltos grandes em caso de lag
+            if (deltaTime > 100) deltaTime = 100;
             
             // Aplicar gravidade
-            applyGravity();
+            applyGravity(deltaTime);
             
             // Atualizar projéteis
-            updateProjectiles();
+            updateProjectiles(deltaTime);
+            
+            // Atualizar animações
+            let currentAnimationKey = '';
             
             switch (action) {
                 case VM_STANDBY:
                     actionTime = 0;
+                    currentAnimationKey = facingDirection === 'left' ? 'stand_left' : 'stand_right';
+                    
                     /* Verifique qual tecla está pressionada para mudar a ação */
                     if (keyState['ArrowLeft']) {
                         action = VM_WALK;
                         facingDirection = 'left';
+                        // Resetar a animação de andar
+                        animations['walk_left'].reset();
                     } else if (keyState['ArrowRight']) {
                         action = VM_WALK;
                         facingDirection = 'right';
+                        // Resetar a animação de andar
+                        animations['walk_right'].reset();
                     } else if (keyState['s']) {
                         action = VM_SHOOT;
+                        // Resetar a animação de atirar
+                        animations[facingDirection === 'left' ? 'shoot_left' : 'shoot_right'].reset();
                         createProjectile();
                     } else if (keyState['j'] && !isJumping) {
                         action = VM_JUMP;
                         isJumping = true;
                         currentJumpVelocity = jumpVelocity;
+                        // Resetar a animação de pular
+                        animations[facingDirection === 'left' ? 'jump_left' : 'jump_right'].reset();
+                    } else if (keyState['k']) {
+                        action = VM_PUNCH;
+                        // Resetar a animação de soco
+                        animations[facingDirection === 'left' ? 'punch_left' : 'punch_right'].reset();
+                    } else if (keyState['l']) {
+                        action = VM_KICK;
+                        // Resetar a animação de chute
+                        animations[facingDirection === 'left' ? 'kick_left' : 'kick_right'].reset();
                     }
                     break;
                 case VM_WALK:
-                    actionTime += (1 + timeElapsed);
+                    actionTime += deltaTime;
+                    currentAnimationKey = facingDirection === 'left' ? 'walk_left' : 'walk_right';
+                    
                     /* Movimentação */
                     if (keyState['ArrowRight']) {
                         facingDirection = 'right';
-                        screenPosition += (0.1 + (timeElapsed / 3));
+                        screenPosition += (0.1 + (deltaTime / 30));
                     } else if (keyState['ArrowLeft']) {
                         facingDirection = 'left';
-                        screenPosition -= (0.1 + (timeElapsed / 3));
+                        screenPosition -= (0.1 + (deltaTime / 30));
                     } else {
                         action = VM_STANDBY;
                     }
@@ -389,11 +593,13 @@
                     /* Verificar outras ações durante a caminhada */
                     if (keyState['s']) {
                         action = VM_SHOOT;
+                        animations[facingDirection === 'left' ? 'shoot_left' : 'shoot_right'].reset();
                         createProjectile();
                     } else if (keyState['j'] && !isJumping) {
                         action = VM_JUMP;
                         isJumping = true;
                         currentJumpVelocity = jumpVelocity;
+                        animations[facingDirection === 'left' ? 'jump_left' : 'jump_right'].reset();
                     }
                     
                     /* Limitações de rolagem */
@@ -404,28 +610,55 @@
                     }
                     break;
                 case VM_SHOOT:
-                    actionTime += (1 + timeElapsed);
+                    actionTime += deltaTime;
+                    currentAnimationKey = facingDirection === 'left' ? 'shoot_left' : 'shoot_right';
+                    
+                    // A mudança de estado é controlada pela finalização da animação
                     if (actionTime >= 300) {
-                        action = VM_STANDBY;
+                        animations[currentAnimationKey].finished = true;
                     }
                     break;
                 case VM_JUMP:
-                    actionTime += (1 + timeElapsed);
+                    actionTime += deltaTime;
+                    currentAnimationKey = facingDirection === 'left' ? 'jump_left' : 'jump_right';
                     
                     // Permitir movimento horizontal durante o pulo
                     if (keyState['ArrowRight']) {
                         facingDirection = 'right';
-                        screenPosition += (0.1 + (timeElapsed / 3));
+                        screenPosition += (0.1 + (deltaTime / 30));
                     } else if (keyState['ArrowLeft']) {
                         facingDirection = 'left';
-                        screenPosition -= (0.1 + (timeElapsed / 3));
+                        screenPosition -= (0.1 + (deltaTime / 30));
                     }
                     
                     // Permitir atirar durante o pulo
-                    if (keyState['s'] && actionTime % 30 === 0) {
+                    if (keyState['s'] && actionTime % 300 < 16) {
                         createProjectile();
                     }
                     break;
+                case VM_PUNCH:
+                    actionTime += deltaTime;
+                    currentAnimationKey = facingDirection === 'left' ? 'punch_left' : 'punch_right';
+                    
+                    // A mudança de estado é controlada pela finalização da animação
+                    if (actionTime >= 300) {
+                        animations[currentAnimationKey].finished = true;
+                    }
+                    break;
+                case VM_KICK:
+                    actionTime += deltaTime;
+                    currentAnimationKey = facingDirection === 'left' ? 'kick_left' : 'kick_right';
+                    
+                    // A mudança de estado é controlada pela finalização da animação
+                    if (actionTime >= 400) {
+                        animations[currentAnimationKey].finished = true;
+                    }
+                    break;
+            }
+            
+            // Atualizar a animação atual
+            if (currentAnimationKey) {
+                animations[currentAnimationKey].update(deltaTime);
             }
             
             // Incrementar pontuação ao longo do tempo
@@ -446,7 +679,14 @@
             facingDirection = 'right';
             isJumping = false;
             personY = groundLevel;
-            update();
+            lastFrameTime = performance.now();
+            
+            // Resetar todas as animações
+            for (const key in animations) {
+                animations[key].reset();
+            }
+            
+            update(lastFrameTime);
         }
         
         // Iniciar o jogo
@@ -454,7 +694,7 @@
         
         // Pré-carregar imagens
         let loadedImages = 0;
-        const totalImages = Object.keys(images).length;
+        const totalImages = Object.keys(images).length + Object.keys(spritesheets).length;
         
         function checkImagesLoaded() {
             loadedImages++;
@@ -468,6 +708,14 @@
             img.onload = checkImagesLoaded;
             img.onerror = function() {
                 console.error("Erro ao carregar imagem: " + this.src);
+                checkImagesLoaded();
+            };
+        });
+        
+        Object.values(spritesheets).forEach(sprite => {
+            sprite.image.onload = checkImagesLoaded;
+            sprite.image.onerror = function() {
+                console.error("Erro ao carregar sprite: " + this.src);
                 checkImagesLoaded();
             };
         });
