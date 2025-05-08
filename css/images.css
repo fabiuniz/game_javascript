@@ -1,38 +1,67 @@
 body {
-  margin: 0;
-  padding: 20px;
-  font-family: Arial, sans-serif;
-  background-color: #f0f8ff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+    margin: 0;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    background-color: #f0f8ff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 .game-container {
-  position: relative;
-  margin-bottom: 20px;
+    position: relative;
+    margin-bottom: 20px;
 }
 canvas {
-  border: 2px solid #0066cc;
-  background-color: #f0f0f0;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border: 2px solid #0066cc;
+    background-color: #f0f0f0;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 .controls {
-  background-color: #e6f2ff;
-  padding: 15px;
-  border-radius: 8px;
-  margin-top: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  max-width: 800px;
+    background-color: #e6f2ff;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    max-width: 800px;
 }
 .controls h3 {
-  margin-top: 0;
-  color: #0066cc;
+    margin-top: 0;
+    color: #0066cc;
 }
 .key {
-  display: inline-block;
-  background-color: #ddd;
-  padding: 5px 10px;
-  border-radius: 4px;
-  margin: 0 5px;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.1);
+    display: inline-block;
+    background-color: #ddd;
+    padding: 5px 10px;
+    border-radius: 4px;
+    margin: 0 5px;
+    box-shadow: 0 2px 2px rgba(0, 0, 0, 0.1);
+}
+.sprite-preview {
+    margin-top: 20px;
+    background-color: #e6f2ff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    max-width: 800px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.sprite-preview h3 {
+    width: 100%;
+    color: #0066cc;
+    margin-top: 0;
+}
+.sprite-frame {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.sprite-frame canvas {
+    border: 1px solid #0066cc;
+}
+.sprite-frame span {
+    margin-top: 5px;
+    font-size: 14px;
+    color: #333;
 }
