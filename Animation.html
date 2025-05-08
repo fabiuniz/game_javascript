@@ -53,38 +53,40 @@
     
     <div class="controls">
         <h3>Controles</h3>
-        <p><span class="key">←</span> <span class="key">→</span> Mover | <span class="key">J</span> Pular | <span class="key">S</span> Atirar
+        <p><span class="key">←</span> <span class="key">→</span> Mover | <span class="key">J</span> Pular | <span class="key">S</span> Atirar</p>
     </div>
-    
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        
-        /* Definição dos estados do jogo*/
+
+        // Definição dos estados do jogo
         const VM_STANDBY = 0;
         const VM_WALK = 1;
         const VM_SHOOT = 2;
         const VM_JUMP = 3;
-        
-        /* Inicializações*/
+
+        // Inicializações
         let facingDirection = 'right';
         let action = VM_STANDBY;
         let actionTime = 0;
-        let screenPosition = 128;
+        let screenPosition = 0;
         let keyState = {};
         let isJumping = false;
         let gravity = 0.5;
         let jumpVelocity = -10;
         let currentJumpVelocity = 0;
-        let groundLevel = canvas.height - 160;
+        let groundLevel = canvas.height - 80;
         let personY = groundLevel;
-        let personHeight = 160;
+        let personHeight = 80;
         let lastFrameTime = performance.now();
         let deltaTime = 0;
-        
-        /* Sistema de projéteis */
+        let frameIndex = 0;
+        let frameTime = 0;
+        const frameDuration = 100; // Duração de cada frame em ms
+
+        // Sistema de projéteis
         const projectiles = [];
-        
+
         class Projectile {
             constructor(x, y, direction) {
                 this.x = x;
@@ -102,8 +104,6 @@
                 } else {
                     this.x -= this.speed * (dt / 16);
                 }
-                
-                // Desativar projéteis que saem da tela
                 if (this.x < 0 || this.x > canvas.width) {
                     this.active = false;
                 }
@@ -114,8 +114,6 @@
                 ctx.beginPath();
                 ctx.ellipse(this.x, this.y, this.width, this.height, 0, 0, Math.PI * 2);
                 ctx.fill();
-                
-                // Efeito de brilho
                 ctx.fillStyle = '#99ccff';
                 ctx.beginPath();
                 ctx.ellipse(this.x, this.y, this.width * 0.5, this.height * 0.5, 0, 0, Math.PI * 2);
@@ -123,36 +121,60 @@
             }
         }
 
-        /* Objeto para imagens*/
+        // Objeto para imagens
         const images = {
-            person_stopped_right: new Image(),
-            person_stopped_left: new Image(),
-            person_running_left: new Image(),
-            person_running_right: new Image(),
-            person_shoot_left: new Image(),
-            person_shoot_right: new Image(),
-            person_jump_left: new Image(),
-            person_jump_right: new Image(),
             floor: new Image(),
             ceiling: new Image(),
             pillar: new Image(),
-            forest: new Image()
+            forest: new Image(),
+            personSpriteSheet: new Image()
         };
 
-        /* Carregando imagens*/
-        images.person_stopped_right.src = 'images/stop_right.png';
-        images.person_stopped_left.src = 'images/stop_left.png';
-        images.person_running_left.src = 'images/walk_left.png';
-        images.person_running_right.src = 'images/walk_right.png';
-        images.person_shoot_left.src = 'images/shoot_mirror.png';
-        images.person_shoot_right.src = 'images/shoot.png';
-        images.person_jump_left.src = 'images/jump_mirror.png';
-        images.person_jump_right.src = 'images/jump.png';
+        // Configuração da spritesheet
+        const larguraDoFrame = 157;
+        const alturaDoFrame = 467 / 4;
+        const spriteFrames = {
+            standby: [0, 1, 2, 3],
+            walk: [4, 5, 6, 7],
+            shoot: [8, 9, 10, 11],
+            jump: [12, 13, 14, 15]
+        };
+
+        function getPersonSprite(frameIndex) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = larguraDoFrame;
+            canvas.height = alturaDoFrame;
+
+            const numColunas = 4;
+            const linha = Math.floor(frameIndex / numColunas);
+            const coluna = frameIndex % numColunas;
+            const spriteX = coluna * larguraDoFrame;
+            const spriteY = linha * alturaDoFrame;
+
+            ctx.drawImage(
+                images.personSpriteSheet,
+                spriteX,
+                spriteY,
+                larguraDoFrame,
+                alturaDoFrame,
+                0,
+                0,
+                larguraDoFrame,
+                alturaDoFrame
+            );
+
+            return canvas;
+        }
+
+        // Carregando as imagens
+        images.personSpriteSheet.src = 'images/all.png';
         images.floor.src = 'images/chao.png';
         images.ceiling.src = 'images/teto.png';
         images.pillar.src = 'images/pilar.png';
         images.forest.src = 'images/floresta.png';
 
+        // Controles
         window.addEventListener('keydown', (e) => {
             keyState[e.key] = true;
         });
@@ -163,18 +185,11 @@
 
         function drawBackground() {
             const lFator = 32;
-
-            /* Desenhar floresta (ao fundo)*/
-            ctx.drawImage(images.forest, 0 - screenPosition * 0.5, 0, canvas.width+40, canvas.height);
-
-            /* Teto e chão*/
+            ctx.drawImage(images.forest, 0 - screenPosition * 0.5, 0, canvas.width + 40, canvas.height);
             for (let i = 0; i < 32; i++) {
                 ctx.drawImage(images.ceiling, (lFator * i) - screenPosition, -2, 32, 32);
-                ctx.drawImage(images.ceiling, (lFator * i + lFator) - screenPosition, -2, 32, 32);
                 ctx.drawImage(images.floor, (lFator * i) - screenPosition, 232, 32, 32);
             }
-
-            /* Desenhar pilares*/
             const pilarFator = 125;
             for (let i = 0; i < 10; i++) {
                 ctx.drawImage(images.pillar, (pilarFator * i) - screenPosition, 34, 21, 65);
@@ -184,63 +199,52 @@
         }
 
         function drawPerson() {
-            const personX = canvas.width / 2 - 78;
-            /* Desenha o personagem baseado nas ações atuais*/
+            const personX = canvas.width / 2 - 39;
+            let frames;
             switch (action) {
                 case VM_STANDBY:
-                    if (facingDirection === 'left') {
-                        ctx.drawImage(images.person_stopped_left, personX, personY, 78, 160);
-                    } else {
-                        ctx.drawImage(images.person_stopped_right, personX, personY, 78, 160);
-                    }
+                    frames = spriteFrames.standby;
                     break;
                 case VM_WALK:
-                    if (facingDirection === 'left') {
-                        ctx.drawImage(images.person_running_left, personX, personY, 78, 160);
-                    } else {
-                        ctx.drawImage(images.person_running_right, personX, personY, 78, 160);
-                    }
+                    frames = spriteFrames.walk;
                     break;
                 case VM_SHOOT:
-                    if (facingDirection === 'left') {
-                        ctx.drawImage(images.person_shoot_left, personX, personY, 78, 160);
-                    } else {
-                        ctx.drawImage(images.person_shoot_right, personX, personY, 78, 160);
-                    }
+                    frames = spriteFrames.shoot;
                     break;
                 case VM_JUMP:
-                    if (facingDirection === 'left') {
-                        ctx.drawImage(images.person_jump_left, personX, personY, 78, 160);
-                    } else {
-                        ctx.drawImage(images.person_jump_right, personX, personY, 78, 160);
-                    }
+                    frames = spriteFrames.jump;
                     break;
+            }
+            const currentFrame = frames[Math.floor(frameIndex) % frames.length];
+            const sprite = getPersonSprite(currentFrame);
+            if (facingDirection === 'left') {
+                ctx.scale(-1, 1);
+                ctx.drawImage(sprite, -personX - 78, personY, 78, 80);
+                ctx.scale(-1, 1);
+            } else {
+                ctx.drawImage(sprite, personX, personY, 78, 80);
             }
         }
 
         function drawStatusLabel() {
-            /* Desenha informações de status*/
             ctx.fillStyle = '#000000';
             ctx.fillText("Ação: " + (action === VM_STANDBY ? "Parado" :
                 action === VM_WALK ? "Andando" :
                 action === VM_SHOOT ? "Atirando" :
                 "Pulando"), 10, 64);
-            ctx.fillText("Tempo da ação: " + actionTime, 10, 80);
+            ctx.fillText("Tempo da ação: " + Math.round(actionTime), 10, 80);
             ctx.fillText("Posição da tela: " + Math.round(screenPosition), 10, 96);
-            ctx.fillText("s = atirar; j = pular; setas = movimentar ", 10, 112);
+            ctx.fillText("s = atirar; j = pular; setas = movimentar", 10, 112);
         }
 
         function drawAllSprites() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawBackground();
-            
-            // Desenhar projéteis ativos
             projectiles.forEach(projectile => {
                 if (projectile.active) {
                     projectile.draw();
                 }
             });
-            
             drawPerson();
             drawStatusLabel();
         }
@@ -249,26 +253,16 @@
             const personX = canvas.width / 2;
             const personWidth = 78;
             const projectileY = personY + personHeight / 2;
-            
-            let projectileX;
-            if (facingDirection === 'right') {
-                projectileX = personX + personWidth / 2;
-            } else {
-                projectileX = personX - personWidth / 2;
-            }
-            
+            let projectileX = facingDirection === 'right' ? personX + personWidth / 2 : personX - personWidth / 2;
             projectiles.push(new Projectile(projectileX, projectileY, facingDirection));
         }
 
         function updateProjectiles(dt) {
-            // Atualizar posição dos projéteis
             projectiles.forEach(projectile => {
                 if (projectile.active) {
                     projectile.update(dt);
                 }
             });
-            
-            // Remover projéteis inativos
             for (let i = projectiles.length - 1; i >= 0; i--) {
                 if (!projectiles[i].active) {
                     projectiles.splice(i, 1);
@@ -280,14 +274,10 @@
             if (isJumping) {
                 personY += currentJumpVelocity * (dt / 16);
                 currentJumpVelocity += gravity * (dt / 16);
-                
-                // Verificar se o personagem chegou ao chão
                 if (personY >= groundLevel) {
                     personY = groundLevel;
                     isJumping = false;
                     currentJumpVelocity = 0;
-                    
-                    // Se estava pulando, voltar para o estado parado
                     if (action === VM_JUMP) {
                         action = VM_STANDBY;
                     }
@@ -296,23 +286,23 @@
         }
 
         function update(timestamp) {
-            // Calcular deltaTime para animações consistentes
             deltaTime = timestamp - lastFrameTime;
             lastFrameTime = timestamp;
-            
-            // Limitar deltaTime para evitar saltos grandes em caso de lag
             if (deltaTime > 100) deltaTime = 100;
-            
-            // Aplicar gravidade
+
+            // Atualizar animação
+            frameTime += deltaTime;
+            if (frameTime >= frameDuration) {
+                frameIndex = (frameIndex + 1) % 4;
+                frameTime = 0;
+            }
+
             applyGravity(deltaTime);
-            
-            // Atualizar projéteis
             updateProjectiles(deltaTime);
 
             switch (action) {
                 case VM_STANDBY:
                     actionTime = 0;
-                    /* Verifique qual tecla está pressionada para mudar a ação*/
                     if (keyState['ArrowLeft']) {
                         action = VM_WALK;
                         facingDirection = 'left';
@@ -330,15 +320,15 @@
                     break;
                 case VM_WALK:
                     actionTime += deltaTime;
-                    /* Movimentação*/
                     if (keyState['ArrowRight']) {
-                        screenPosition += (4 + (deltaTime / 15)); // Aumentei a constante e ajustei o divisor do deltaTime
+                        screenPosition += 4 * (deltaTime / 16);
+                        facingDirection = 'right';
                     } else if (keyState['ArrowLeft']) {
-                        screenPosition -= (4 + (deltaTime / 15)); // Aumentei a constante e ajustei o divisor do deltaTime
+                        screenPosition -= 4 * (deltaTime / 16);
+                        facingDirection = 'left';
                     } else {
                         action = VM_STANDBY;
                     }
-                    /* Verificar outras ações durante a caminhada */
                     if (keyState['s']) {
                         action = VM_SHOOT;
                         createProjectile();
@@ -347,14 +337,8 @@
                         isJumping = true;
                         currentJumpVelocity = jumpVelocity;
                     }
-                    /* Limitações de rolagem*/
-                    if (screenPosition >= 128) {
-                        screenPosition = 0;
-                    } else if (screenPosition <= 0) {
-                        screenPosition = 128;
-                    }
                     break;
-               case VM_SHOOT:
+                case VM_SHOOT:
                     actionTime += deltaTime;
                     if (actionTime >= 300) {
                         action = VM_STANDBY;
@@ -362,27 +346,28 @@
                     break;
                 case VM_JUMP:
                     actionTime += deltaTime;
-                    // Permitir movimento horizontal durante o pulo
                     if (keyState['ArrowRight']) {
-                        screenPosition += (0.1 + (deltaTime / 30));
+                        screenPosition += 4 * (deltaTime / 16);
+                        facingDirection = 'right';
                     } else if (keyState['ArrowLeft']) {
-                        screenPosition -= (0.1 + (deltaTime / 30));
+                        screenPosition -= 4 * (deltaTime / 16);
+                        facingDirection = 'left';
                     }
-                    // Permitir atirar durante o pulo
                     if (keyState['s'] && actionTime % 300 < 16) {
                         createProjectile();
                     }
                     break;
             }
+
             drawAllSprites();
             requestAnimationFrame(update);
         }
 
         function init() {
             ctx.font = "16px Arial";
-            screenPosition = 128;
-            lastFrameTime = performance.now();
-            update(lastFrameTime);
+            images.personSpriteSheet.onload = () => {
+                update(performance.now());
+            };
         }
         init();
     </script>
