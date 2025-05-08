@@ -138,9 +138,9 @@ class cls_game {
 
         for (let i = 0; i < pillarsPerScreen; i++) {
             let pillarX = (i * pillarSpacing) - pillarOffset;
-            this.ctx.drawImage(this.images.pillar, pillarX, 34, 21, 65);
-            this.ctx.drawImage(this.images.pillar, pillarX, 99, 21, 65);
-            this.ctx.drawImage(this.images.pillar, pillarX, 164, 21, 65);
+            this.ctx.drawImage(this.images.pillar, pillarX, 30, 21, 74);
+            this.ctx.drawImage(this.images.pillar, pillarX, 95, 21, 74);
+            this.ctx.drawImage(this.images.pillar, pillarX, 160, 21, 74);
         }
     }
 
@@ -165,10 +165,10 @@ class cls_game {
         const sprite = this.getPersonSprite(currentFrame);
         if (this.facingDirection === 'left') {
             this.ctx.scale(-1, 1);
-            this.ctx.drawImage(sprite, -personX - 78, this.personY + 54, 78, 80);
+            this.ctx.drawImage(sprite, -personX - 78, this.personY + 54, 78, 84);
             this.ctx.scale(-1, 1);
         } else {
-            this.ctx.drawImage(sprite, personX, this.personY + 54, 78, 80);
+            this.ctx.drawImage(sprite, personX, this.personY + 54, 78, 84);
         }
     }
 
