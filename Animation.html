@@ -43,6 +43,35 @@
             margin: 0 5px;
             box-shadow: 0 2px 2px rgba(0, 0, 0, 0.1);
         }
+        .sprite-preview {
+            margin-top: 20px;
+            background-color: #e6f2ff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .sprite-preview h3 {
+            width: 100%;
+            color: #0066cc;
+            margin-top: 0;
+        }
+        .sprite-frame {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .sprite-frame canvas {
+            border: 1px solid #0066cc;
+        }
+        .sprite-frame span {
+            margin-top: 5px;
+            font-size: 14px;
+            color: #333;
+        }
     </style>
 </head>
 <body>
@@ -55,6 +84,7 @@
         <h3>Controles</h3>
         <p><span class="key">←</span> <span class="key">→</span> Mover | <span class="key">J</span> Pular | <span class="key">S</span> Atirar</p>
     </div>
+    <div class="sprite-preview" id="spritePreview"></div>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -138,10 +168,10 @@
         const larguraDoFrame = 157;
         const alturaDoFrame = 467 / 4;
         const spriteFrames = {
-            standby: [0],
-            walk: [1,2],
-            shoot: [2],
-            jump: [3]
+            standby: [2],
+            walk: [6,7],
+            shoot: [12,11],
+            jump: [16,17]
         };
 
         function getPersonSprite(frameIndex) {
@@ -169,6 +199,35 @@
             );
 
             return canvas;
+        }
+
+        // Nova função para exibir amostra dos sprites
+        function displaySpriteSheetPreview() {
+            const previewContainer = document.getElementById('spritePreview');
+            previewContainer.innerHTML = '<h3>Visualização da Spritesheet</h3>';
+            
+            // Definir o número total de frames (baseado na spritesheet 4x1)
+            const totalFrames = 19;
+            const frameLabels = ['Standby (0)', 'Walk 1 (1)', 'Walk 2/Shoot (2)', 'Jump (3)'];
+            for (let i = 4; i < 20; i++) {
+                frameLabels.push(String(i)); // Converte o número para string e adiciona ao array
+            };
+
+            for (let i = 0; i < totalFrames; i++) {
+                const frameDiv = document.createElement('div');
+                frameDiv.className = 'sprite-frame';
+                
+                const spriteCanvas = getPersonSprite(i);
+                spriteCanvas.style.width = '78px'; // Mesma escala usada no jogo
+                spriteCanvas.style.height = '80px';
+                
+                const label = document.createElement('span');
+                label.textContent = frameLabels[i];
+                
+                frameDiv.appendChild(spriteCanvas);
+                frameDiv.appendChild(label);
+                previewContainer.appendChild(frameDiv);
+            }
         }
 
         // Carregando as imagens
@@ -397,6 +456,10 @@
             ctx.font = "16px Arial";
             screenPosition = 128;
             lastFrameTime = performance.now();
+            // Chamar a função de visualização após as imagens serem carregadas
+            images.personSpriteSheet.onload = () => {
+                displaySpriteSheetPreview();
+            };
             update(lastFrameTime);
         }
         init();
