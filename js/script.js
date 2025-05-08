@@ -11,7 +11,7 @@
         let facingDirection = 'right';
         let action = VM_STANDBY;
         let actionTime = 0;
-        let screenPosition = 128;
+        let screenPosition = 124;
         let keyState = {};
         let isJumping = false;
         let gravity = 0.5;
@@ -333,10 +333,10 @@
                         currentJumpVelocity = jumpVelocity;
                     }
                     /* Limitações de rolagem*/
-                    if (screenPosition >= 128) {
+                    if (screenPosition >= 124) {
                         screenPosition = 0;
                     } else if (screenPosition <= 0) {
-                        screenPosition = 128;
+                        screenPosition = 124;
                     }
                     break;
                 case VM_SHOOT:
@@ -366,7 +366,7 @@
 
         function init() {
             ctx.font = "16px Arial";
-            screenPosition = 128;
+            screenPosition = 124;
             lastFrameTime = performance.now();
             // Chamar a função de visualização após as imagens serem carregadas
             images.personSpriteSheet.onload = () => {
