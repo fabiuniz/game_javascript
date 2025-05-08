@@ -120,8 +120,8 @@
             
             // Definir o número total de frames (baseado na spritesheet 4x1)
             const totalFrames = 19;
-            const frameLabels = ['Standby (0)', 'Walk 1 (1)', 'Walk 2/Shoot (2)', 'Jump (3)'];
-            for (let i = 4; i < 20; i++) {
+            const frameLabels = [];
+            for (let i = 0; i < 20; i++) {
                 frameLabels.push(String(i)); // Converte o número para string e adiciona ao array
             };
 
