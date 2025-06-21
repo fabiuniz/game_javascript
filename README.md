@@ -1,3 +1,10 @@
+<!-- 
+  Tags: Dev
+  Label: 🎮 Projeto de jogo em JavaScript.
+  Description: Descrição de um projeto de jogo baseado em JavaScript.
+  path_hook: hookfigma.hook8
+-->
+
 # Jogo Simples em JavaScript
 
 Este repositório contém um pequeno prototipo de jogo desenvolvido em JavaScript, que ilustra a lógica de programação e o uso de algoritmos para criar uma experiência de jogo interativa. O jogo envolve um personagem que pode se mover, pular e atirar, proporcionando uma base para entender os fundamentos do desenvolvimento de jogos.
@@ -14,3 +21,10 @@ Este repositório contém um pequeno prototipo de jogo desenvolvido em JavaScrip
 1. **Clone o Repositório**:
    ```bash
    git clone https://github.com/fabiuniz/game_javascript.git
+
+## 👨‍💻 Author
+[Fabiano Rocha/Fabiuniz]
+
+## Licence
+
+[MIT License]
