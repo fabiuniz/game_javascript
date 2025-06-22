@@ -9,6 +9,8 @@
 
 Este repositório contém um pequeno prototipo de jogo desenvolvido em JavaScript, que ilustra a lógica de programação e o uso de algoritmos para criar uma experiência de jogo interativa. O jogo envolve um personagem que pode se mover, pular e atirar, proporcionando uma base para entender os fundamentos do desenvolvimento de jogos.
 
+![Screenshot](images/screenshot.png)
+
 ## ✨ Funcionalidades
 
 - **Movimentação do Personagem**: O personagem pode se mover para a esquerda e para a direita utilizando as setas do teclado.
