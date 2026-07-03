@@ -187,7 +187,7 @@ class cls_game {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.drawBackground();
 
-        // Desenhar projéteis ativos
+        // Desenhar projéteis activos
         this.projectiles.forEach(projectile => {
             if (projectile.active) {
                 projectile.draw();
@@ -333,13 +333,42 @@ class cls_game {
         this.images.pillar.src = 'images/pilar.png';
         this.images.forest.src = 'images/floresta.png';
 
-        // Controles
+        // Controles Físicos (Teclado)
         window.addEventListener('keydown', (e) => {
             this.keyState[e.key] = true;
         });
 
         window.addEventListener('keyup', (e) => {
             this.keyState[e.key] = false;
+        });
+
+        // Controles Virtuais (Mapeamento dos botões da tela para as mesmas chaves do teclado)
+        const buttonMapping = [
+            { id: 'btnLeft', key: 'ArrowLeft' },
+            { id: 'btnRight', key: 'ArrowRight' },
+            { id: 'btnJump', key: 'j' },
+            { id: 'btnShoot', key: 's' }
+        ];
+
+        buttonMapping.forEach(mapping => {
+            const btn = document.getElementById(mapping.id);
+            if (btn) {
+                // Quando pressionado (Mouse ou Toque)
+                btn.addEventListener('pointerdown', (e) => {
+                    e.preventDefault();
+                    this.keyState[mapping.key] = true;
+                });
+
+                // Quando solto
+                btn.addEventListener('pointerup', () => {
+                    this.keyState[mapping.key] = false;
+                });
+
+                // Quando arrasta para fora do botão ativo
+                btn.addEventListener('pointerleave', () => {
+                    this.keyState[mapping.key] = false;
+                });
+            }
         });
 
         // Chamar a função de visualização após as imagens serem carregadas
@@ -391,4 +420,4 @@ class Projectile {
 }
 
 // Instanciar a classe do jogo para iniciá-lo
-const game = new cls_game();        
+const game = new cls_game();

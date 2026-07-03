@@ -65,3 +65,24 @@ canvas {
     font-size: 14px;
     color: #333;
 }
+.mobile-controls {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+.game-btn {
+    padding: 12px 24px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 8px;
+    border: 2px solid #333;
+    background-color: #f0f0f0;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+}
+.game-btn:active {
+    background-color: #ccc;
+}
