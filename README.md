@@ -1,7 +1,8 @@
 <!-- 
   Tags: Dev
-  Label: 🎮 Projeto de jogo em JavaScript.
-  Description: Descrição de um projeto de jogo baseado em JavaScript.
+  Label: 🎮 Jogo JS (JavaScript)
+  Description:🌍 Descrição de um projeto de jogo baseado em JavaScript.
+  technical_requirement: JavaScript, HTML, CSS, Git, Game Development, Algorithms, Frontend, Web
   path_hook: hookfigma.hook8
 -->
 
