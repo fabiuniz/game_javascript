@@ -19,7 +19,12 @@ Este repositório contém um pequeno prototipo de jogo desenvolvido em JavaScrip
 - **Animações**: Uso de sprites para representar diferentes ações do personagem (parado, andando, pulando, atirando).
 - **Ambiente**: Fundo com uma floresta e elementos como chão e pilares, trazendo um contexto visual ao jogo.
 
+# 🎮 Projeto de Jogo em JavaScript
+
+👉 [Clique aqui para jogar e ver o projeto funcionando!](https://fabiuniz.github.io/game_javascript/index.html)
+
 ## 🚀 Como testar
+
 
 1. **Clone o Repositório**:
    ```bash
